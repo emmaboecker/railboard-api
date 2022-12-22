@@ -130,7 +130,7 @@ impl From<StationBoardError> for RailboardApiError {
         match value {
             StationBoardError::FailedRequest(err) => RailboardApiError {
                 domain: ErrorDomain::Request,
-                message: format!("Failed to get departures from Vendo: {}", err),
+                message: format!("Failed to get station board from Vendo: {}", err),
                 error: None,
             },
             StationBoardError::VendoError(err) => RailboardApiError {
