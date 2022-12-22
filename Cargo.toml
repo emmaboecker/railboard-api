@@ -5,16 +5,17 @@ edition = "2021"
 publish = false
 
 [dependencies]
-rocket = { version = "0.5.0-rc.2", features = ["json"] }
+axum = "0.6"
 reqwest = { version = "0.11", features = ["json"] }
 tokio = { version = "1", features = ["full"] }
 
-serde = "1.0.151"
+serde = { version = "1", features = ["derive"] }
 serde_json = "1.0.91"
-serde_derive = "1.0.151"
 chrono = { version = "0.4.23", features = ["serde"] }
 
 async-lock = "2.6.0"
-async-trait = "0.1.60"
 thiserror = "1.0.38"
 chrono-tz = "0.8.1"
+
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }

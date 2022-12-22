@@ -1,61 +1,31 @@
 use std::collections::BTreeMap;
 
+use axum::{extract::Path, Json};
 use railboard_api::client::vendo::{
     station_board::{
-        StationBoard, StationBoardArrivalsElement, StationBoardDeparturesElement, StationBoardError,
+        StationBoardArrivalsElement, StationBoardDeparturesElement, StationBoardError,
     },
     VendoClient,
 };
-use rocket::{get, serde::json::Json};
 use serde::{Deserialize, Serialize};
 
 use crate::server::{
-    error::{ErrorDomain, RailboardApiError},
-    response::ApiResponse,
+    error::{ErrorDomain, RailboardApiError, RailboardResult},
     types::Time,
 };
 
-#[get("/station_board/<id>")]
-pub async fn station_board(id: &str) -> Json<ApiResponse<Vec<StationBoardTrain>>> {
+pub async fn station_board(
+    Path(id): Path<String>,
+) -> RailboardResult<Json<Vec<StationBoardTrain>>> {
     let vendo_client = VendoClient::default();
 
-    let arrivals = match vendo_client.station_board_arrivals(id, None, None).await {
-        Ok(response) => response,
-        Err(err) => {
-            let error = match err {
-                StationBoardError::FailedRequest(err) => RailboardApiError {
-                    domain: ErrorDomain::Request,
-                    message: format!("Failed to get arrivals from Vendo: {}", err),
-                    error: None,
-                },
-                StationBoardError::VendoError(err) => RailboardApiError {
-                    domain: ErrorDomain::Vendo,
-                    message: format!("Failed to get arrivals from Vendo: {}", err),
-                    error: Some(serde_json::to_value(err).unwrap()),
-                },
-            };
-            return Json(ApiResponse::Error(error));
-        }
-    };
+    let (arrivals, departures) = tokio::join!(
+        vendo_client.station_board_arrivals(&id, None, None),
+        vendo_client.station_board_departures(&id, None, None)
+    );
 
-    let departures = match vendo_client.station_board_departures(id, None, None).await {
-        Ok(response) => response,
-        Err(err) => {
-            let error = match err {
-                StationBoardError::FailedRequest(err) => RailboardApiError {
-                    domain: ErrorDomain::Request,
-                    message: format!("Failed to get departures from Vendo: {}", err),
-                    error: None,
-                },
-                StationBoardError::VendoError(err) => RailboardApiError {
-                    domain: ErrorDomain::Vendo,
-                    message: format!("Failed to get departures from Vendo: {}", err),
-                    error: Some(serde_json::to_value(err).unwrap()),
-                },
-            };
-            return Json(ApiResponse::Error(error));
-        }
-    };
+    let arrivals = arrivals?;
+    let departures = departures?;
 
     let mut trains: BTreeMap<
         String,
@@ -78,15 +48,15 @@ pub async fn station_board(id: &str) -> Json<ApiResponse<Vec<StationBoardTrain>>
     let trains: Vec<StationBoardTrain> = trains
         .into_iter()
         .map(|(id, (arrival, departure))| {
-            let arrival_data = arrival.clone().map(|arrival| StationBoardArrival {
-                origin: arrival.origin_name,
+            let arrival_data = arrival.as_ref().map(|arrival| StationBoardArrival {
+                origin: arrival.origin_name.clone(),
                 time: Time {
                     scheduled: arrival.arrival_date,
                     realtime: arrival.realtime_arrival_date,
                 },
             });
-            let departure_data = departure.clone().map(|departure| StationBoardDeparture {
-                destination: departure.destination_name,
+            let departure_data = departure.as_ref().map(|departure| StationBoardDeparture {
+                destination: departure.destination_name.clone(),
                 time: Time {
                     scheduled: departure.departure_date,
                     realtime: departure.realtime_departure_date,
@@ -119,12 +89,12 @@ pub async fn station_board(id: &str) -> Json<ApiResponse<Vec<StationBoardTrain>>
                     notes: arrival.notes.into_iter().map(|note| note.text).collect(),
                 }
             } else {
-                panic!("Arrival and departure are both None"); // This should never happen (it is just simply not possible)
+                panic!("Arrival and departure are both None"); // This should never happen (it is just simply not possible) // idk it's still DB 😀😀😀
             }
         })
         .collect();
 
-    Json(ApiResponse::Success(trains))
+    Ok(Json(trains))
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -153,4 +123,21 @@ pub struct StationBoardArrival {
 pub struct StationBoardDeparture {
     destination: String,
     time: Time,
+}
+
+impl From<StationBoardError> for RailboardApiError {
+    fn from(value: StationBoardError) -> Self {
+        match value {
+            StationBoardError::FailedRequest(err) => RailboardApiError {
+                domain: ErrorDomain::Request,
+                message: format!("Failed to get station board from Vendo: {}", err),
+                error: None,
+            },
+            StationBoardError::VendoError(err) => RailboardApiError {
+                domain: ErrorDomain::Vendo,
+                message: format!("Failed to get station board from Vendo: {}", err),
+                error: Some(serde_json::to_value(err).unwrap()),
+            },
+        }
+    }
 }

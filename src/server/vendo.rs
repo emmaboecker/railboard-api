@@ -1,8 +1,7 @@
-use rocket::routes;
+use axum::{routing::get, Router};
 
 mod station_board;
-pub use station_board::*;
 
-pub fn get_routes() -> Vec<rocket::Route> {
-    routes![station_board::station_board]
+pub fn router() -> Router {
+    Router::new().route("/station_board/:id", get(station_board::station_board))
 }
