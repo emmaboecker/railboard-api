@@ -135,7 +135,7 @@ impl From<StationBoardError> for RailboardApiError {
             },
             StationBoardError::VendoError(err) => RailboardApiError {
                 domain: ErrorDomain::Vendo,
-                message: format!("Failed to get departures from Vendo: {}", err),
+                message: format!("Failed to get station board from Vendo: {}", err),
                 error: Some(serde_json::to_value(err).unwrap()),
             },
         }
