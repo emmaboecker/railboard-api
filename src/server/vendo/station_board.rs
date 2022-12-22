@@ -48,15 +48,15 @@ pub async fn station_board(
     let trains: Vec<StationBoardTrain> = trains
         .into_iter()
         .map(|(id, (arrival, departure))| {
-            let arrival_data = arrival.clone().map(|arrival| StationBoardArrival {
-                origin: arrival.origin_name,
+            let arrival_data = arrival.as_ref().map(|arrival| StationBoardArrival {
+                origin: arrival.origin_name.clone(),
                 time: Time {
                     scheduled: arrival.arrival_date,
                     realtime: arrival.realtime_arrival_date,
                 },
             });
-            let departure_data = departure.clone().map(|departure| StationBoardDeparture {
-                destination: departure.destination_name,
+            let departure_data = departure.as_ref().map(|departure| StationBoardDeparture {
+                destination: departure.destination_name.clone(),
                 time: Time {
                     scheduled: departure.departure_date,
                     realtime: departure.realtime_departure_date,
