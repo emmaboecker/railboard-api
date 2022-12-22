@@ -19,43 +19,13 @@ pub async fn station_board(
 ) -> RailboardResult<Json<Vec<StationBoardTrain>>> {
     let vendo_client = VendoClient::default();
 
-    let arrivals = match vendo_client.station_board_arrivals(&id, None, None).await {
-        Ok(response) => response,
-        Err(err) => {
-            let error = match err {
-                StationBoardError::FailedRequest(err) => RailboardApiError {
-                    domain: ErrorDomain::Request,
-                    message: format!("Failed to get arrivals from Vendo: {}", err),
-                    error: None,
-                },
-                StationBoardError::VendoError(err) => RailboardApiError {
-                    domain: ErrorDomain::Vendo,
-                    message: format!("Failed to get arrivals from Vendo: {}", err),
-                    error: Some(serde_json::to_value(err).unwrap()),
-                },
-            };
-            return Err(error);
-        }
-    };
+    let (arrivals, departures) = tokio::join!(
+        vendo_client.station_board_arrivals(&id, None, None),
+        vendo_client.station_board_departures(&id, None, None)
+    );
 
-    let departures = match vendo_client.station_board_departures(&id, None, None).await {
-        Ok(response) => response,
-        Err(err) => {
-            let error = match err {
-                StationBoardError::FailedRequest(err) => RailboardApiError {
-                    domain: ErrorDomain::Request,
-                    message: format!("Failed to get departures from Vendo: {}", err),
-                    error: None,
-                },
-                StationBoardError::VendoError(err) => RailboardApiError {
-                    domain: ErrorDomain::Vendo,
-                    message: format!("Failed to get departures from Vendo: {}", err),
-                    error: Some(serde_json::to_value(err).unwrap()),
-                },
-            };
-            return Err(error);
-        }
-    };
+    let arrivals = arrivals?;
+    let departures = departures?;
 
     let mut trains: BTreeMap<
         String,
@@ -153,4 +123,21 @@ pub struct StationBoardArrival {
 pub struct StationBoardDeparture {
     destination: String,
     time: Time,
+}
+
+impl From<StationBoardError> for RailboardApiError {
+    fn from(value: StationBoardError) -> Self {
+        match value {
+            StationBoardError::FailedRequest(err) => RailboardApiError {
+                domain: ErrorDomain::Request,
+                message: format!("Failed to get departures from Vendo: {}", err),
+                error: None,
+            },
+            StationBoardError::VendoError(err) => RailboardApiError {
+                domain: ErrorDomain::Vendo,
+                message: format!("Failed to get departures from Vendo: {}", err),
+                error: Some(serde_json::to_value(err).unwrap()),
+            },
+        }
+    }
 }
