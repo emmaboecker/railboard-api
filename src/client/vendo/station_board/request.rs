@@ -12,7 +12,7 @@ pub struct VendoStationBoardRequest {
     pub transport_types: Vec<VendoTransportType>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum VendoTransportType {
     #[serde(rename = "HOCHGESCHWINDIGKEITSZUEGE")]
     HighspeedTrains,
@@ -37,18 +37,16 @@ pub enum VendoTransportType {
 }
 
 impl VendoTransportType {
-    pub fn all() -> Vec<VendoTransportType> {
-        vec![
-            VendoTransportType::HighspeedTrains,
-            VendoTransportType::ICAndECTrains,
-            VendoTransportType::InterregionalAndFastTrains,
-            VendoTransportType::RegionalAndOtherTrains,
-            VendoTransportType::SuburbanTrains,
-            VendoTransportType::Busses,
-            VendoTransportType::Boats,
-            VendoTransportType::Subway,
-            VendoTransportType::Tram,
-            VendoTransportType::CallRequiringTransportTypes,
-        ]
-    }
+    pub const ALL: [VendoTransportType; 10] = [
+        VendoTransportType::HighspeedTrains,
+        VendoTransportType::ICAndECTrains,
+        VendoTransportType::InterregionalAndFastTrains,
+        VendoTransportType::RegionalAndOtherTrains,
+        VendoTransportType::SuburbanTrains,
+        VendoTransportType::Busses,
+        VendoTransportType::Boats,
+        VendoTransportType::Subway,
+        VendoTransportType::Tram,
+        VendoTransportType::CallRequiringTransportTypes,
+    ];
 }

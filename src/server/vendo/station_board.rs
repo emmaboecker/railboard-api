@@ -1,25 +1,25 @@
 use std::collections::BTreeMap;
 
+use axum::{extract::Path, Json};
 use railboard_api::client::vendo::{
     station_board::{
-        StationBoard, StationBoardArrivalsElement, StationBoardDeparturesElement, StationBoardError,
+        StationBoardArrivalsElement, StationBoardDeparturesElement, StationBoardError,
     },
     VendoClient,
 };
-use rocket::{get, serde::json::Json};
 use serde::{Deserialize, Serialize};
 
 use crate::server::{
-    error::{ErrorDomain, RailboardApiError},
-    response::ApiResponse,
+    error::{ErrorDomain, RailboardApiError, RailboardResult},
     types::Time,
 };
 
-#[get("/station_board/<id>")]
-pub async fn station_board(id: &str) -> Json<ApiResponse<Vec<StationBoardTrain>>> {
+pub async fn station_board(
+    Path(id): Path<String>,
+) -> RailboardResult<Json<Vec<StationBoardTrain>>> {
     let vendo_client = VendoClient::default();
 
-    let arrivals = match vendo_client.station_board_arrivals(id, None, None).await {
+    let arrivals = match vendo_client.station_board_arrivals(&id, None, None).await {
         Ok(response) => response,
         Err(err) => {
             let error = match err {
@@ -34,11 +34,11 @@ pub async fn station_board(id: &str) -> Json<ApiResponse<Vec<StationBoardTrain>>
                     error: Some(serde_json::to_value(err).unwrap()),
                 },
             };
-            return Json(ApiResponse::Error(error));
+            return Err(error);
         }
     };
 
-    let departures = match vendo_client.station_board_departures(id, None, None).await {
+    let departures = match vendo_client.station_board_departures(&id, None, None).await {
         Ok(response) => response,
         Err(err) => {
             let error = match err {
@@ -53,7 +53,7 @@ pub async fn station_board(id: &str) -> Json<ApiResponse<Vec<StationBoardTrain>>
                     error: Some(serde_json::to_value(err).unwrap()),
                 },
             };
-            return Json(ApiResponse::Error(error));
+            return Err(error);
         }
     };
 
@@ -119,12 +119,12 @@ pub async fn station_board(id: &str) -> Json<ApiResponse<Vec<StationBoardTrain>>
                     notes: arrival.notes.into_iter().map(|note| note.text).collect(),
                 }
             } else {
-                panic!("Arrival and departure are both None"); // This should never happen (it is just simply not possible)
+                panic!("Arrival and departure are both None"); // This should never happen (it is just simply not possible) // idk it's still DB 😀😀😀
             }
         })
         .collect();
 
-    Json(ApiResponse::Success(trains))
+    Ok(Json(trains))
 }
 
 #[derive(Debug, Serialize, Deserialize)]

@@ -24,8 +24,8 @@ impl VendoClient {
         concurrent_requests: Option<usize>,
     ) -> Self {
         Self {
-            client: client.unwrap_or(reqwest::Client::new()),
-            base_url: base_url.unwrap_or(String::from("https://app.vendo.noncd.db.de/")),
+            client: client.unwrap_or_else(reqwest::Client::new),
+            base_url: base_url.unwrap_or_else(|| String::from("https://app.vendo.noncd.db.de/")),
             semaphore: Semaphore::new(concurrent_requests.unwrap_or(100)),
         }
     }

@@ -1,4 +1,3 @@
-use async_trait::async_trait;
 use chrono::{NaiveDateTime, Utc};
 use chrono_tz::Europe::Berlin;
 use reqwest::{
@@ -17,26 +16,8 @@ pub use response::*;
 
 use super::VendoClient;
 
-#[async_trait]
-pub trait StationBoard {
-    async fn station_board_arrivals(
-        &self,
-        station: &str,
-        date: Option<NaiveDateTime>,
-        transport_types: Option<Vec<VendoTransportType>>,
-    ) -> Result<StationBoardArrivalsResponse, StationBoardError>;
-
-    async fn station_board_departures(
-        &self,
-        station: &str,
-        date: Option<NaiveDateTime>,
-        transport_types: Option<Vec<VendoTransportType>>,
-    ) -> Result<StationBoardDeparturesResponse, StationBoardError>;
-}
-
-#[async_trait]
-impl StationBoard for VendoClient {
-    async fn station_board_arrivals(
+impl VendoClient {
+    pub async fn station_board_arrivals(
         &self,
         station: &str,
         date: Option<NaiveDateTime>,
@@ -57,7 +38,7 @@ impl StationBoard for VendoClient {
         }
     }
 
-    async fn station_board_departures(
+    pub async fn station_board_departures(
         &self,
         station: &str,
         date: Option<NaiveDateTime>,
@@ -88,6 +69,8 @@ trait StationBoardRequest {
     ) -> Result<Request, reqwest::Error>;
 }
 
+const VENDO_STATION_BOARD_HEADER: &str = "application/x.db.vendo.mob.bahnhofstafeln.v1+json";
+
 impl StationBoardRequest for RequestBuilder {
     fn station_board_request(
         self,
@@ -102,7 +85,7 @@ impl StationBoardRequest for RequestBuilder {
             station: station.to_string(),
             date: date.format("%Y-%m-%d").to_string(),
             time: date.format("%H:%M").to_string(),
-            transport_types: transport_types.unwrap_or(VendoTransportType::all()),
+            transport_types: transport_types.unwrap_or_else(|| VendoTransportType::ALL.to_vec()),
         };
 
         let mut request = self
@@ -114,12 +97,9 @@ impl StationBoardRequest for RequestBuilder {
 
         headers.insert(
             CONTENT_TYPE,
-            HeaderValue::from_static("application/x.db.vendo.mob.bahnhofstafeln.v1+json"),
+            HeaderValue::from_static(VENDO_STATION_BOARD_HEADER),
         );
-        headers.insert(
-            ACCEPT,
-            HeaderValue::from_static("application/x.db.vendo.mob.bahnhofstafeln.v1+json"),
-        );
+        headers.insert(ACCEPT, HeaderValue::from_static(VENDO_STATION_BOARD_HEADER));
 
         Ok(request)
     }
