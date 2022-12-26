@@ -1,6 +1,11 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 
-use axum::{extract::Path, Json};
+use axum::{
+    extract::{Path, Query},
+    Json,
+};
+use chrono::TimeZone;
+use chrono_tz::Europe::Berlin;
 use railboard_api::client::vendo::{
     station_board::{
         StationBoardArrivalsElement, StationBoardDeparturesElement, StationBoardError,
@@ -16,12 +21,33 @@ use crate::server::{
 
 pub async fn station_board(
     Path(id): Path<String>,
+    Query(params): Query<HashMap<String, String>>,
 ) -> RailboardResult<Json<Vec<StationBoardTrain>>> {
     let vendo_client = VendoClient::default();
 
+    let date = params.get("date");
+
+    let date = if let Some(date) = date {
+        Some(date.parse()?)
+    } else {
+        None
+    };
+
+    let date = if let Some(date) = date {
+        Berlin.from_utc_datetime(&chrono::NaiveDateTime::from_timestamp_opt(date, 0).ok_or(
+            RailboardApiError {
+                domain: ErrorDomain::Input,
+                message: "Invalid date".to_string(),
+                error: None,
+            },
+        )?)
+    } else {
+        Berlin.from_utc_datetime(&chrono::Utc::now().naive_utc())
+    };
+
     let (arrivals, departures) = tokio::join!(
-        vendo_client.station_board_arrivals(&id, None, None),
-        vendo_client.station_board_departures(&id, None, None)
+        vendo_client.station_board_arrivals(&id, Some(date), None),
+        vendo_client.station_board_departures(&id, Some(date), None)
     );
 
     let arrivals = arrivals?;
@@ -45,7 +71,7 @@ pub async fn station_board(
         trains.entry(id).or_insert_with(|| (None, None)).1 = Some(train);
     }
 
-    let trains: Vec<StationBoardTrain> = trains
+    let mut trains: Vec<StationBoardTrain> = trains
         .into_iter()
         .map(|(id, (arrival, departure))| {
             let arrival_data = arrival.as_ref().map(|arrival| StationBoardArrival {
@@ -94,6 +120,17 @@ pub async fn station_board(
         })
         .collect();
 
+    trains.sort_by(|a, b| {
+        let a_dep = a.departure.clone().map(|departure| departure.time);
+        let a_arr = a.arrival.clone().map(|arrival| arrival.time);
+        let b_dep = b.departure.clone().map(|departure| departure.time);
+        let b_arr = b.arrival.clone().map(|arrival| arrival.time);
+        a_dep
+            .unwrap_or_else(|| a_arr.unwrap())
+            .scheduled
+            .cmp(&b_dep.unwrap_or_else(|| b_arr.unwrap()).scheduled)
+    });
+
     Ok(Json(trains))
 }
 
@@ -111,14 +148,14 @@ pub struct StationBoardTrain {
     pub notes: Vec<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct StationBoardArrival {
     origin: String,
     time: Time,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct StationBoardDeparture {
     destination: String,

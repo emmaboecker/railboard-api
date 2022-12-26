@@ -1,5 +1,5 @@
-use chrono::{NaiveDateTime, Utc};
-use chrono_tz::Europe::Berlin;
+use chrono::{DateTime, Utc};
+use chrono_tz::Tz;
 use reqwest::{
     header::{HeaderValue, ACCEPT, CONTENT_TYPE},
     Request, RequestBuilder,
@@ -20,7 +20,7 @@ impl VendoClient {
     pub async fn station_board_arrivals(
         &self,
         station: &str,
-        date: Option<NaiveDateTime>,
+        date: Option<DateTime<Tz>>,
         transport_types: Option<Vec<VendoTransportType>>,
     ) -> Result<StationBoardArrivalsResponse, StationBoardError> {
         let _permit = self.semaphore.acquire().await;
@@ -41,7 +41,7 @@ impl VendoClient {
     pub async fn station_board_departures(
         &self,
         station: &str,
-        date: Option<NaiveDateTime>,
+        date: Option<DateTime<Tz>>,
         transport_types: Option<Vec<VendoTransportType>>,
     ) -> Result<StationBoardDeparturesResponse, StationBoardError> {
         let _permit = self.semaphore.acquire().await;
@@ -64,7 +64,7 @@ trait StationBoardRequest {
     fn station_board_request(
         self,
         station: &str,
-        date: Option<NaiveDateTime>,
+        date: Option<DateTime<Tz>>,
         transport_types: Option<Vec<VendoTransportType>>,
     ) -> Result<Request, reqwest::Error>;
 }
@@ -75,10 +75,10 @@ impl StationBoardRequest for RequestBuilder {
     fn station_board_request(
         self,
         station: &str,
-        date: Option<NaiveDateTime>,
+        date: Option<DateTime<Tz>>,
         transport_types: Option<Vec<VendoTransportType>>,
     ) -> Result<Request, reqwest::Error> {
-        let current_date = Utc::now().with_timezone(&Berlin).naive_utc();
+        let current_date = Utc::now().with_timezone(&Tz::UTC);
         let date = date.unwrap_or(current_date);
 
         let body = VendoStationBoardRequest {

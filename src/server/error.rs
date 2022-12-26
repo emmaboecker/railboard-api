@@ -1,3 +1,5 @@
+use std::num::ParseIntError;
+
 use axum::{response::IntoResponse, Json};
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
@@ -14,6 +16,8 @@ pub struct RailboardApiError {
 pub enum ErrorDomain {
     #[serde(rename = "vendo")]
     Vendo,
+    #[serde(rename = "input")]
+    Input,
     #[serde(rename = "request")]
     Request,
 }
@@ -24,8 +28,19 @@ impl IntoResponse for RailboardApiError {
     fn into_response(self) -> axum::response::Response {
         let code = match self.domain {
             ErrorDomain::Vendo => StatusCode::BAD_REQUEST,
+            ErrorDomain::Input => StatusCode::BAD_REQUEST,
             ErrorDomain::Request => StatusCode::INTERNAL_SERVER_ERROR,
         };
         (code, Json(self)).into_response()
+    }
+}
+
+impl From<ParseIntError> for RailboardApiError {
+    fn from(value: ParseIntError) -> Self {
+        RailboardApiError {
+            domain: ErrorDomain::Input,
+            message: format!("Required Integer but found: {}", value),
+            error: None,
+        }
     }
 }
