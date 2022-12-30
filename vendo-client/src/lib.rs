@@ -1,5 +1,10 @@
-pub mod station_board;
 use async_lock::Semaphore;
+
+mod error;
+pub use error::*;
+
+mod endpoints;
+pub use endpoints::*;
 
 pub struct VendoClient {
     client: reqwest::Client,

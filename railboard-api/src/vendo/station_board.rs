@@ -6,7 +6,7 @@ use axum::{
 };
 use chrono::TimeZone;
 use chrono_tz::Europe::Berlin;
-use railboard_api::client::vendo::{
+use vendo_client::{
     station_board::{
         StationBoardArrivalsElement, StationBoardDeparturesElement, StationBoardError,
     },
@@ -14,7 +14,7 @@ use railboard_api::client::vendo::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::server::{
+use crate::{
     error::{ErrorDomain, RailboardApiError, RailboardResult},
     types::Time,
 };

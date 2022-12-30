@@ -1,9 +1,10 @@
 use axum::{Router, Server};
-use server::vendo;
 use tracing::metadata::LevelFilter;
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
-mod server;
+pub mod error;
+pub mod types;
+pub mod vendo;
 
 #[tokio::main]
 async fn main() {

@@ -7,14 +7,13 @@ use reqwest::{
 use serde::Deserialize;
 use thiserror::Error;
 
-use crate::client::errors::VendoError;
+use crate::VendoClient;
+use crate::error::VendoError;
 
 mod request;
 pub use request::*;
 mod response;
 pub use response::*;
-
-use super::VendoClient;
 
 impl VendoClient {
     pub async fn station_board_arrivals(
