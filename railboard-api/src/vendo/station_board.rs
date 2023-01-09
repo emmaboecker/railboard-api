@@ -6,25 +6,21 @@ use axum::{
 };
 use chrono::TimeZone;
 use chrono_tz::Europe::Berlin;
-use vendo_client::{
-    station_board::{
-        StationBoardArrivalsElement, StationBoardDeparturesElement, StationBoardError,
-    },
-    VendoClient,
-};
 use serde::{Deserialize, Serialize};
+use vendo_client::station_board::{
+    StationBoardArrivalsElement, StationBoardDeparturesElement, StationBoardError,
+};
 
 use crate::{
     error::{ErrorDomain, RailboardApiError, RailboardResult},
     types::Time,
+    VENDO_CLIENT,
 };
 
 pub async fn station_board(
     Path(id): Path<String>,
     Query(params): Query<HashMap<String, String>>,
 ) -> RailboardResult<Json<Vec<StationBoardTrain>>> {
-    let vendo_client = VendoClient::default();
-
     let date = params.get("date");
 
     let date = if let Some(date) = date {
@@ -46,8 +42,8 @@ pub async fn station_board(
     };
 
     let (arrivals, departures) = tokio::join!(
-        vendo_client.station_board_arrivals(&id, Some(date), None),
-        vendo_client.station_board_departures(&id, Some(date), None)
+        VENDO_CLIENT.station_board_arrivals(&id, Some(date), None),
+        VENDO_CLIENT.station_board_departures(&id, Some(date), None)
     );
 
     let arrivals = arrivals?;
@@ -115,7 +111,7 @@ pub async fn station_board(
                     notes: arrival.notes.into_iter().map(|note| note.text).collect(),
                 }
             } else {
-                panic!("Arrival and departure are both None"); // This should never happen (it is just simply not possible) // idk it's still DB 😀😀😀
+                panic!("Arrival and departure are both None"); // This should never happen (it is just simply not possible)
             }
         })
         .collect();
@@ -124,7 +120,7 @@ pub async fn station_board(
         let a_dep = a.departure.clone().map(|departure| departure.time);
         let a_arr = a.arrival.clone().map(|arrival| arrival.time);
         let b_dep = b.departure.clone().map(|departure| departure.time);
-        let b_arr = b.arrival.clone().map(|arrival| arrival.time);
+        let b_arr = b.arrival.clone().map(|arrival| arrival.time); // I need to remove these clones but I don't know how
         a_dep
             .unwrap_or_else(|| a_arr.unwrap())
             .scheduled

@@ -7,8 +7,8 @@ use reqwest::{
 use serde::Deserialize;
 use thiserror::Error;
 
-use crate::VendoClient;
 use crate::error::VendoError;
+use crate::VendoClient;
 
 mod request;
 pub use request::*;
@@ -29,9 +29,9 @@ impl VendoClient {
             .post(format!("{}{}", self.base_url, "/mob/bahnhofstafel/ankunft"))
             .station_board_request(station, date, transport_types)?;
 
-        let reponse: VendoArrivalsResponse = self.client.execute(request).await?.json().await?;
+        let response: VendoArrivalsResponse = self.client.execute(request).await?.json().await?;
 
-        match reponse {
+        match response {
             VendoArrivalsResponse::VendoResponse(response) => Ok(*response),
             VendoArrivalsResponse::VendoError(error) => Err(StationBoardError::VendoError(error)),
         }
@@ -50,9 +50,9 @@ impl VendoClient {
             .post(format!("{}{}", self.base_url, "/mob/bahnhofstafel/abfahrt"))
             .station_board_request(station, date, transport_types)?;
 
-        let reponse: VendoDeparturesResponse = self.client.execute(request).await?.json().await?;
+        let response: VendoDeparturesResponse = self.client.execute(request).await?.json().await?;
 
-        match reponse {
+        match response {
             VendoDeparturesResponse::VendoResponse(response) => Ok(*response),
             VendoDeparturesResponse::VendoError(error) => Err(StationBoardError::VendoError(error)),
         }
