@@ -1,6 +1,7 @@
 use axum::{routing::get, Router};
 
 mod journey_details;
+mod location_search;
 mod station_board;
 
 pub fn router() -> Router {
@@ -9,5 +10,9 @@ pub fn router() -> Router {
         .route(
             "/journey_details/:id",
             get(journey_details::journey_details),
+        )
+        .route(
+            "/location_search/:query",
+            get(location_search::location_search),
         )
 }
