@@ -16,3 +16,6 @@ async-lock = "2.6.0"
 thiserror = "1.0.38"
 
 urlencoding = "2.1.2"
+
+[dev-dependencies]
+tokio = { version = "1.21.2", features = ["full"] }
