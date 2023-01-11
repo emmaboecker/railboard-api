@@ -12,17 +12,13 @@ const VENDO_JOURNEY_DETAILS_HEADER: &str = "application/x.db.vendo.mob.zuglauf.v
 impl VendoClient {
     pub async fn journey_details(
         &self,
-        id: String,
+        id: &str,
     ) -> Result<JourneyDetailsResponse, JourneyDetailsError> {
         let _permit = self.semaphore.acquire().await;
 
         let response: VendoJourneyDetailsResponse = self
             .client
-            .get(format!(
-                "{}/mob/zuglauf/{}",
-                self.base_url,
-                encode(id.as_str())
-            ))
+            .get(format!("{}/mob/zuglauf/{}", self.base_url, encode(id)))
             .header(
                 CONTENT_TYPE,
                 HeaderValue::from_static(VENDO_JOURNEY_DETAILS_HEADER),

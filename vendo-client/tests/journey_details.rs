@@ -24,10 +24,7 @@ async fn journey_details() {
 
     let first_train = first_train.unwrap();
 
-    let journey_details = client
-        .journey_details(first_train.id.clone())
-        .await
-        .unwrap();
+    let journey_details = client.journey_details(&first_train.id).await.unwrap();
 
     assert_eq!(journey_details.name, first_train.name, "Names do not equal");
 }

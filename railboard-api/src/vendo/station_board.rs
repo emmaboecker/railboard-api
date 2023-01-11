@@ -14,6 +14,8 @@ use vendo_client::station_board::{
     StationBoardArrivalsElement, StationBoardDeparturesElement, StationBoardError,
 };
 
+#[cfg(feature = "cache")]
+use crate::cache::CachableObject;
 use crate::{
     error::{ErrorDomain, RailboardApiError, RailboardResult},
     types::Time,
@@ -25,7 +27,7 @@ pub async fn station_board(
     Path(id): Path<String>,
     Query(params): Query<HashMap<String, String>>,
     State(state): State<Arc<VendoState>>,
-) -> RailboardResult<Json<Vec<StationBoardTrain>>> {
+) -> RailboardResult<Json<StationBoard>> {
     let date = params.get("date");
 
     let date = if let Some(date) = date {
@@ -45,6 +47,21 @@ pub async fn station_board(
     } else {
         Berlin.from_utc_datetime(&chrono::Utc::now().naive_utc())
     };
+
+    #[cfg(feature = "cache")]
+    if let Some(cached) = StationBoard::get_from_id(
+        &format!(
+            "station-board.{}.{}.{}",
+            id,
+            date.format("%Y-%m-%d"),
+            date.format("%H:%M")
+        ),
+        &state.cache,
+    )
+    .await
+    {
+        return Ok(Json(cached));
+    }
 
     let (arrivals, departures) = tokio::join!(
         state
@@ -76,7 +93,7 @@ pub async fn station_board(
         trains.entry(id).or_insert_with(|| (None, None)).1 = Some(train);
     }
 
-    let mut trains: Vec<StationBoardTrain> = trains
+    let mut trains: Vec<StationBoardElement> = trains
         .into_iter()
         .map(|(id, (arrival, departure))| {
             let arrival_data = arrival.as_ref().map(|arrival| StationBoardArrival {
@@ -95,7 +112,7 @@ pub async fn station_board(
             });
 
             if let Some(departure) = departure {
-                StationBoardTrain {
+                StationBoardElement {
                     journey_id: id,
                     arrival: arrival_data,
                     departure: departure_data,
@@ -107,7 +124,7 @@ pub async fn station_board(
                     notes: departure.notes.into_iter().map(|note| note.text).collect(),
                 }
             } else if let Some(arrival) = arrival {
-                StationBoardTrain {
+                StationBoardElement {
                     journey_id: id,
                     arrival: arrival_data,
                     departure: departure_data,
@@ -136,12 +153,34 @@ pub async fn station_board(
             .cmp(&b_dep.unwrap_or_else(|| b_arr.unwrap()).scheduled)
     });
 
-    Ok(Json(trains))
+    let station_board = StationBoard {
+        day: date.format("%Y-%m-%d").to_string(),
+        time: date.format("%H:%M").to_string(),
+        id,
+        station_board: trains,
+    };
+
+    #[cfg(feature = "cache")]
+    {
+        let station_board = station_board.clone();
+        tokio::spawn(async move { station_board.insert_to_cache(&state.cache).await });
+    }
+
+    Ok(Json(station_board))
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct StationBoardTrain {
+pub struct StationBoard {
+    pub day: String,
+    pub time: String,
+    pub id: String,
+    pub station_board: Vec<StationBoardElement>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct StationBoardElement {
     pub journey_id: String,
     pub arrival: Option<StationBoardArrival>,
     pub departure: Option<StationBoardDeparture>,

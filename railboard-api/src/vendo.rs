@@ -3,18 +3,27 @@ use std::sync::Arc;
 use axum::{routing::get, Router};
 use vendo_client::VendoClient;
 
-mod journey_details;
-mod location_search;
-mod station_board;
+#[cfg(feature = "cache")]
+use crate::cache::{self};
+
+pub mod journey_details;
+pub mod location_search;
+pub mod station_board;
 
 pub struct VendoState {
     vendo_client: VendoClient,
+    #[cfg(feature = "cache")]
+    cache: cache::RedisCache,
 }
 
-pub fn router() -> Router {
+pub fn router(#[cfg(feature = "cache")] redis: redis::Client) -> Router {
     let vendo_client = VendoClient::default();
 
-    let shared_state = Arc::new(VendoState { vendo_client });
+    let shared_state = Arc::new(VendoState {
+        vendo_client,
+        #[cfg(feature = "cache")]
+        cache: cache::RedisCache::new(redis),
+    });
 
     Router::new()
         .route("/station_board/:id", get(station_board::station_board))

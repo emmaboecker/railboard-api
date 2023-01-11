@@ -10,6 +10,7 @@ use vendo_client::journey_details::{
 };
 
 use crate::{
+    cache::CachableObject,
     error::{ErrorDomain, RailboardApiError, RailboardResult},
     types::{Attribute, HimNotice, Time},
 };
@@ -20,13 +21,22 @@ pub async fn journey_details(
     Path(id): Path<String>,
     State(state): State<Arc<VendoState>>,
 ) -> RailboardResult<Json<JoruneyDetails>> {
-    let response = state.vendo_client.journey_details(id).await?;
+    #[cfg(feature = "cache")]
+    if let Some(cached) =
+        JoruneyDetails::get_from_id(&format!("journey-details.{}", &id), &state.cache).await
+    {
+        return Ok(Json(cached));
+    }
+
+    let response = state.vendo_client.journey_details(&id).await?;
 
     let mapped = JoruneyDetails {
         short_name: response.short_name,
         name: response.name,
         long_name: response.long_name,
         destination: response.destination,
+
+        journey_id: id,
 
         stops: response
             .stops
@@ -77,16 +87,24 @@ pub async fn journey_details(
         journey_day: response.journey_day,
     };
 
+    #[cfg(feature = "cache")]
+    {
+        let cached = mapped.clone();
+        tokio::spawn(async move { cached.insert_to_cache(&state.cache).await });
+    }
+
     Ok(Json(mapped))
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct JoruneyDetails {
     pub short_name: String,
     pub name: String,
     pub long_name: String,
     pub destination: String,
+
+    pub journey_id: String,
 
     pub stops: Vec<Stop>,
 
@@ -101,14 +119,14 @@ pub struct JoruneyDetails {
     pub journey_day: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct TrainSchedule {
     pub regular_schedule: String,
     pub days_of_operation: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Stop {
     pub name: String,

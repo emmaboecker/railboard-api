@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct LocationSearchResult {
     pub coordinates: LocationSearchCoordinates,
@@ -12,7 +12,7 @@ pub struct LocationSearchResult {
     pub weight: i32,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct LocationSearchCoordinates {
     pub latitude: f64,
     pub longitude: f64,
