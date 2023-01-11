@@ -870,7 +870,6 @@ dependencies = [
  "axum",
  "chrono",
  "chrono-tz",
- "lazy_static",
  "reqwest",
  "serde",
  "serde_json",

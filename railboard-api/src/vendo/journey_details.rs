@@ -1,4 +1,9 @@
-use axum::{extract::Path, Json};
+use std::sync::Arc;
+
+use axum::{
+    extract::{Path, State},
+    Json,
+};
 use serde::{Deserialize, Serialize};
 use vendo_client::journey_details::{
     JourneyDetailsAttribute, JourneyDetailsError, JourneyDetailsHimNotice,
@@ -7,11 +12,15 @@ use vendo_client::journey_details::{
 use crate::{
     error::{ErrorDomain, RailboardApiError, RailboardResult},
     types::{Attribute, HimNotice, Time},
-    VENDO_CLIENT,
 };
 
-pub async fn journey_details(Path(id): Path<String>) -> RailboardResult<Json<JoruneyDetails>> {
-    let response = VENDO_CLIENT.journey_details(id).await?;
+use super::VendoState;
+
+pub async fn journey_details(
+    Path(id): Path<String>,
+    State(state): State<Arc<VendoState>>,
+) -> RailboardResult<Json<JoruneyDetails>> {
+    let response = state.vendo_client.journey_details(id).await?;
 
     let mapped = JoruneyDetails {
         short_name: response.short_name,

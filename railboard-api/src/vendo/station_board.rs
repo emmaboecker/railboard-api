@@ -1,7 +1,10 @@
-use std::collections::{BTreeMap, HashMap};
+use std::{
+    collections::{BTreeMap, HashMap},
+    sync::Arc,
+};
 
 use axum::{
-    extract::{Path, Query},
+    extract::{Path, Query, State},
     Json,
 };
 use chrono::TimeZone;
@@ -14,12 +17,14 @@ use vendo_client::station_board::{
 use crate::{
     error::{ErrorDomain, RailboardApiError, RailboardResult},
     types::Time,
-    VENDO_CLIENT,
 };
+
+use super::VendoState;
 
 pub async fn station_board(
     Path(id): Path<String>,
     Query(params): Query<HashMap<String, String>>,
+    State(state): State<Arc<VendoState>>,
 ) -> RailboardResult<Json<Vec<StationBoardTrain>>> {
     let date = params.get("date");
 
@@ -42,8 +47,12 @@ pub async fn station_board(
     };
 
     let (arrivals, departures) = tokio::join!(
-        VENDO_CLIENT.station_board_arrivals(&id, Some(date), None),
-        VENDO_CLIENT.station_board_departures(&id, Some(date), None)
+        state
+            .vendo_client
+            .station_board_arrivals(&id, Some(date), None),
+        state
+            .vendo_client
+            .station_board_departures(&id, Some(date), None)
     );
 
     let arrivals = arrivals?;

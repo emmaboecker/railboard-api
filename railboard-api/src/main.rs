@@ -1,15 +1,10 @@
 use axum::{Router, Server};
-use lazy_static::lazy_static;
 use tracing::metadata::LevelFilter;
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 pub mod error;
 pub mod types;
 pub mod vendo;
-
-lazy_static! {
-    pub static ref VENDO_CLIENT: vendo_client::VendoClient = vendo_client::VendoClient::default();
-}
 
 #[tokio::main]
 async fn main() {
