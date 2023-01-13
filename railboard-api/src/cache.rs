@@ -1,10 +1,33 @@
 use redis::AsyncCommands;
 use serde::{de::DeserializeOwned, Serialize};
+use thiserror::Error;
 
 use crate::vendo::{
     journey_details::JoruneyDetails, location_search::LocationSearchCache,
     station_board::StationBoard,
 };
+
+#[async_trait::async_trait]
+pub trait Cache: Sync + Send {
+    async fn get_from_id<Rt>(&self, id: &str) -> Option<Rt>
+    where
+        Rt: Serialize + DeserializeOwned + Sync + Send;
+
+    async fn insert_to_cache<Rt>(
+        &self,
+        key: String,
+        object: &Rt,
+        expiration: usize,
+    ) -> Result<(), CacheInsertError>
+    where
+        Rt: Serialize + DeserializeOwned + Sync + Send;
+}
+
+#[derive(Debug, Error)]
+pub enum CacheInsertError {
+    #[error("Failed to insert object into Redis: {0}")]
+    RedisError(#[from] redis::RedisError),
+}
 
 pub struct RedisCache {
     pub redis_client: redis::Client,
@@ -17,14 +40,12 @@ impl RedisCache {
 }
 
 #[async_trait::async_trait]
-pub trait CachableObject {
-    async fn insert_to_cache(&self, cache: &RedisCache) -> Result<(), redis::RedisError>;
-
-    async fn get_from_id<Rt>(id: &str, cache: &RedisCache) -> Option<Rt>
+impl Cache for RedisCache {
+    async fn get_from_id<Rt>(&self, id: &str) -> Option<Rt>
     where
         Rt: Serialize + DeserializeOwned,
     {
-        let conn = cache.redis_client.get_async_connection().await;
+        let conn = self.redis_client.get_async_connection().await;
         let mut conn = match conn {
             Ok(conn) => {
                 tracing::debug!("Connection to Cache");
@@ -64,72 +85,57 @@ pub trait CachableObject {
             }
         }
     }
+    async fn insert_to_cache<Rt>(
+        &self,
+        key: String,
+        object: &Rt,
+        expiration: usize,
+    ) -> Result<(), CacheInsertError>
+    where
+        Rt: Serialize + DeserializeOwned + Send + Sync,
+    {
+        let mut connection = self.redis_client.get_async_connection().await?;
+
+        redis::pipe()
+            .atomic()
+            .json_set(&key, "$", object)?
+            .ignore()
+            .expire(&key, expiration)
+            .ignore()
+            .query_async(&mut connection)
+            .await?;
+        Ok(())
+    }
+}
+
+#[async_trait::async_trait]
+pub trait CachableObject {
+    async fn insert_to_cache<C: Cache>(&self, cache: &C) -> Result<(), CacheInsertError>;
 }
 
 #[async_trait::async_trait]
 impl CachableObject for StationBoard {
-    async fn insert_to_cache(&self, cache: &RedisCache) -> Result<(), redis::RedisError> {
-        let serialized = if let Ok(serialized) = serde_json::to_string(&self) {
-            serialized
-        } else {
-            tracing::error!("Error while serializing station board");
-            return Ok(());
-        };
+    async fn insert_to_cache<C: Cache>(&self, cache: &C) -> Result<(), CacheInsertError> {
+        let key = format!("station-board.{}.{}.{}", self.id, self.day, self.time);
 
-        let mut connection = cache.redis_client.get_async_connection().await?;
-        let _: () = connection
-            .set_ex(
-                &format!("station-board.{}.{}.{}", self.id, self.day, self.time),
-                serialized,
-                20,
-            )
-            .await?;
-        Ok(())
+        cache.insert_to_cache(key, self, 90).await
     }
 }
 
 #[async_trait::async_trait]
 impl CachableObject for LocationSearchCache {
-    async fn insert_to_cache(&self, cache: &RedisCache) -> Result<(), redis::RedisError> {
-        let serialized = match serde_json::to_string(&self) {
-            Ok(serialized) => serialized,
-            Err(err) => {
-                tracing::error!("Error while serializing location search: {}", err);
-                return Ok(());
-            }
-        };
+    async fn insert_to_cache<C: Cache>(&self, cache: &C) -> Result<(), CacheInsertError> {
+        let key = format!("location-search.{}", self.query);
 
-        let mut connection = cache.redis_client.get_async_connection().await?;
-        let _: () = connection
-            .set_ex(
-                &format!("location-search.{}", self.query),
-                serialized,
-                60 * 60 * 24 * 7,
-            )
-            .await?;
-        Ok(())
+        cache.insert_to_cache(key, self, 60 * 60 * 24 * 7).await
     }
 }
 
 #[async_trait::async_trait]
 impl CachableObject for JoruneyDetails {
-    async fn insert_to_cache(&self, cache: &RedisCache) -> Result<(), redis::RedisError> {
-        let serialized = match serde_json::to_string(&self) {
-            Ok(serialized) => serialized,
-            Err(err) => {
-                tracing::error!("Error while serializing journey details: {}", err);
-                return Ok(());
-            }
-        };
+    async fn insert_to_cache<C: Cache>(&self, cache: &C) -> Result<(), CacheInsertError> {
+        let key = format!("journey-details.{}", self.journey_id);
 
-        let mut connection = cache.redis_client.get_async_connection().await?;
-        let _: () = connection
-            .set_ex(
-                &format!("journey-details.{}", self.journey_id),
-                serialized,
-                60,
-            )
-            .await?;
-        Ok(())
+        cache.insert_to_cache(key, self, 90).await
     }
 }

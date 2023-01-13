@@ -17,6 +17,7 @@ use vendo_client::station_board::{
 #[cfg(feature = "cache")]
 use crate::cache::CachableObject;
 use crate::{
+    cache::Cache,
     error::{ErrorDomain, RailboardApiError, RailboardResult},
     types::Time,
 };
@@ -49,16 +50,15 @@ pub async fn station_board(
     };
 
     #[cfg(feature = "cache")]
-    if let Some(cached) = StationBoard::get_from_id(
-        &format!(
+    if let Some(cached) = state
+        .cache
+        .get_from_id(&format!(
             "station-board.{}.{}.{}",
             id,
             date.format("%Y-%m-%d"),
             date.format("%H:%M")
-        ),
-        &state.cache,
-    )
-    .await
+        ))
+        .await
     {
         return Ok(Json(cached));
     }
@@ -160,7 +160,6 @@ pub async fn station_board(
         station_board: trains,
     };
 
-    #[cfg(feature = "cache")]
     {
         let station_board = station_board.clone();
         tokio::spawn(async move { station_board.insert_to_cache(&state.cache).await });

@@ -1,8 +1,8 @@
 use axum::{Router, Server};
+use dotenvy::dotenv;
 use tracing::metadata::LevelFilter;
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
-#[cfg(feature = "cache")]
 pub mod cache;
 pub mod error;
 pub mod types;
@@ -10,6 +10,8 @@ pub mod vendo;
 
 #[tokio::main]
 async fn main() {
+    dotenv().ok();
+
     tracing_subscriber::registry()
         .with(fmt::layer())
         .with(
@@ -19,7 +21,6 @@ async fn main() {
         )
         .init();
 
-    #[cfg(feature = "cache")]
     let redis_client = {
         let redis_url = match std::env::var("REDIS_URL") {
             Ok(url) => url,
@@ -32,13 +33,7 @@ async fn main() {
     };
 
     let app = Router::new()
-        .nest(
-            "/vendo/v1",
-            vendo::router(
-                #[cfg(feature = "cache")]
-                redis_client,
-            ),
-        )
+        .nest("/vendo/v1", vendo::router(redis_client))
         .fallback(|| async { "Nothing here :/" });
     let server = Server::bind(&"0.0.0.0:8080".parse().unwrap()).serve(app.into_make_service());
     tracing::info!("Listening on http://localhost:8080/");

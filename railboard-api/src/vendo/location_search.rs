@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use vendo_client::location_search::LocationSearchError;
 
 use crate::{
-    cache::CachableObject,
+    cache::{CachableObject, Cache},
     error::{ErrorDomain, RailboardApiError, RailboardResult},
 };
 
@@ -18,12 +18,10 @@ pub async fn location_search(
     Path(query): Path<String>,
     State(state): State<Arc<VendoState>>,
 ) -> RailboardResult<Json<Vec<vendo_client::location_search::LocationSearchResult>>> {
-    #[cfg(feature = "cache")]
-    if let Some(cached) = LocationSearchCache::get_from_id::<LocationSearchCache>(
-        &format!("location-search.{}", query),
-        &state.cache,
-    )
-    .await
+    if let Some(cached) = state
+        .cache
+        .get_from_id::<LocationSearchCache>(&format!("location-search.{}", query))
+        .await
     {
         return Ok(Json(cached.results));
     }
@@ -38,7 +36,6 @@ pub async fn location_search(
         results: result.clone(),
     };
 
-    #[cfg(feature = "cache")]
     tokio::spawn(async move { location_search.insert_to_cache(&state.cache).await });
 
     Ok(Json(result))

@@ -10,7 +10,7 @@ use vendo_client::journey_details::{
 };
 
 use crate::{
-    cache::CachableObject,
+    cache::{CachableObject, Cache},
     error::{ErrorDomain, RailboardApiError, RailboardResult},
     types::{Attribute, HimNotice, Time},
 };
@@ -21,9 +21,10 @@ pub async fn journey_details(
     Path(id): Path<String>,
     State(state): State<Arc<VendoState>>,
 ) -> RailboardResult<Json<JoruneyDetails>> {
-    #[cfg(feature = "cache")]
-    if let Some(cached) =
-        JoruneyDetails::get_from_id(&format!("journey-details.{}", &id), &state.cache).await
+    if let Some(cached) = state
+        .cache
+        .get_from_id(&format!("journey-details.{}", &id))
+        .await
     {
         return Ok(Json(cached));
     }
@@ -87,7 +88,6 @@ pub async fn journey_details(
         journey_day: response.journey_day,
     };
 
-    #[cfg(feature = "cache")]
     {
         let cached = mapped.clone();
         tokio::spawn(async move { cached.insert_to_cache(&state.cache).await });
