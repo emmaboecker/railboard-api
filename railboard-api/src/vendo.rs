@@ -3,9 +3,7 @@ use std::sync::Arc;
 use axum::{routing::get, Router};
 use vendo_client::VendoClient;
 
-use crate::cache::RedisCache;
-#[cfg(feature = "cache")]
-use crate::cache::{self};
+use crate::cache::{self, RedisCache};
 
 pub mod journey_details;
 pub mod location_search;

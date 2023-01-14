@@ -10,14 +10,10 @@ use axum::{
 use chrono::TimeZone;
 use chrono_tz::Europe::Berlin;
 use serde::{Deserialize, Serialize};
-use vendo_client::station_board::{
-    StationBoardArrivalsElement, StationBoardDeparturesElement, StationBoardError,
-};
+use vendo_client::station_board::{StationBoardArrivalsElement, StationBoardDeparturesElement};
 
-#[cfg(feature = "cache")]
-use crate::cache::CachableObject;
 use crate::{
-    cache::Cache,
+    cache::{CachableObject, Cache},
     error::{ErrorDomain, RailboardApiError, RailboardResult},
     types::Time,
 };
@@ -49,7 +45,6 @@ pub async fn station_board(
         Berlin.from_utc_datetime(&chrono::Utc::now().naive_utc())
     };
 
-    #[cfg(feature = "cache")]
     if let Some(cached) = state
         .cache
         .get_from_id(&format!(
@@ -203,21 +198,4 @@ pub struct StationBoardArrival {
 pub struct StationBoardDeparture {
     destination: String,
     time: Time,
-}
-
-impl From<StationBoardError> for RailboardApiError {
-    fn from(value: StationBoardError) -> Self {
-        match value {
-            StationBoardError::FailedRequest(err) => RailboardApiError {
-                domain: ErrorDomain::Request,
-                message: format!("Failed to get station board from Vendo: {}", err),
-                error: None,
-            },
-            StationBoardError::VendoError(err) => RailboardApiError {
-                domain: ErrorDomain::Vendo,
-                message: format!("Failed to get station board from Vendo: {}", err),
-                error: Some(serde_json::to_value(err).unwrap()),
-            },
-        }
-    }
 }

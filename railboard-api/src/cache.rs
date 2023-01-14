@@ -1,4 +1,4 @@
-use redis::AsyncCommands;
+use redis::JsonAsyncCommands;
 use serde::{de::DeserializeOwned, Serialize};
 use thiserror::Error;
 
@@ -11,7 +11,7 @@ use crate::vendo::{
 pub trait Cache: Sync + Send {
     async fn get_from_id<Rt>(&self, id: &str) -> Option<Rt>
     where
-        Rt: Serialize + DeserializeOwned + Sync + Send;
+        Rt: DeserializeOwned + Sync + Send;
 
     async fn insert_to_cache<Rt>(
         &self,
@@ -20,7 +20,7 @@ pub trait Cache: Sync + Send {
         expiration: usize,
     ) -> Result<(), CacheInsertError>
     where
-        Rt: Serialize + DeserializeOwned + Sync + Send;
+        Rt: Serialize + Sync + Send;
 }
 
 #[derive(Debug, Error)]
@@ -43,7 +43,7 @@ impl RedisCache {
 impl Cache for RedisCache {
     async fn get_from_id<Rt>(&self, id: &str) -> Option<Rt>
     where
-        Rt: Serialize + DeserializeOwned,
+        Rt: DeserializeOwned,
     {
         let conn = self.redis_client.get_async_connection().await;
         let mut conn = match conn {
@@ -56,17 +56,17 @@ impl Cache for RedisCache {
                 return None;
             }
         };
-        let result: Result<Option<String>, redis::RedisError> = conn.get(id).await;
+        let result: Result<Option<String>, redis::RedisError> = conn.json_get(id, "$").await;
 
         match result {
             Ok(result) => match result {
                 Some(result) => {
-                    let result = serde_json::from_str(&result);
+                    let result: Result<Vec<Rt>, serde_json::Error> = serde_json::from_str(&result);
                     match result {
                         Ok(result) => {
                             tracing::debug!("Got result from cache");
                             tracing::debug!("Response cached");
-                            Some(result)
+                            result.into_iter().next()
                         }
                         Err(err) => {
                             tracing::error!("Error while parsing result from cache: {}", err);
@@ -92,7 +92,7 @@ impl Cache for RedisCache {
         expiration: usize,
     ) -> Result<(), CacheInsertError>
     where
-        Rt: Serialize + DeserializeOwned + Send + Sync,
+        Rt: Serialize + Send + Sync,
     {
         let mut connection = self.redis_client.get_async_connection().await?;
 

@@ -2,10 +2,9 @@ mod response;
 use reqwest::header::{HeaderValue, ACCEPT, CONTENT_TYPE};
 pub use response::*;
 use serde::Deserialize;
-use thiserror::Error;
 use urlencoding::encode;
 
-use crate::{VendoClient, VendoError};
+use crate::{VendoClient, VendoError, VendoOrRequestError};
 
 const VENDO_JOURNEY_DETAILS_HEADER: &str = "application/x.db.vendo.mob.zuglauf.v1+json";
 
@@ -13,7 +12,7 @@ impl VendoClient {
     pub async fn journey_details(
         &self,
         id: &str,
-    ) -> Result<JourneyDetailsResponse, JourneyDetailsError> {
+    ) -> Result<JourneyDetailsResponse, VendoOrRequestError> {
         let _permit = self.semaphore.acquire().await;
 
         let response: VendoJourneyDetailsResponse = self
@@ -36,7 +35,7 @@ impl VendoClient {
         match response {
             VendoJourneyDetailsResponse::VendoResponse(response) => Ok(*response),
             VendoJourneyDetailsResponse::VendoError(error) => {
-                Err(JourneyDetailsError::VendoError(error))
+                Err(VendoOrRequestError::VendoError(error))
             }
         }
     }
@@ -47,12 +46,4 @@ impl VendoClient {
 enum VendoJourneyDetailsResponse {
     VendoResponse(Box<JourneyDetailsResponse>),
     VendoError(VendoError),
-}
-
-#[derive(Error, Debug)]
-pub enum JourneyDetailsError {
-    #[error("Vendo returned an error.")]
-    VendoError(#[from] VendoError),
-    #[error(transparent)]
-    FailedRequest(#[from] reqwest::Error),
 }

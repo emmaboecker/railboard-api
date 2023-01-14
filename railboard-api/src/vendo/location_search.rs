@@ -5,11 +5,10 @@ use axum::{
     Json,
 };
 use serde::{Deserialize, Serialize};
-use vendo_client::location_search::LocationSearchError;
 
 use crate::{
     cache::{CachableObject, Cache},
-    error::{ErrorDomain, RailboardApiError, RailboardResult},
+    error::RailboardResult,
 };
 
 use super::VendoState;
@@ -39,23 +38,6 @@ pub async fn location_search(
     tokio::spawn(async move { location_search.insert_to_cache(&state.cache).await });
 
     Ok(Json(result))
-}
-
-impl From<LocationSearchError> for RailboardApiError {
-    fn from(value: LocationSearchError) -> Self {
-        match value {
-            LocationSearchError::FailedRequest(err) => RailboardApiError {
-                domain: ErrorDomain::Request,
-                message: format!("Failed to get station board from Vendo: {}", err),
-                error: None,
-            },
-            LocationSearchError::VendoError(err) => RailboardApiError {
-                domain: ErrorDomain::Vendo,
-                message: format!("Failed to get station board from Vendo: {}", err),
-                error: Some(serde_json::to_value(err).unwrap()),
-            },
-        }
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

@@ -5,13 +5,11 @@ use axum::{
     Json,
 };
 use serde::{Deserialize, Serialize};
-use vendo_client::journey_details::{
-    JourneyDetailsAttribute, JourneyDetailsError, JourneyDetailsHimNotice,
-};
+use vendo_client::journey_details::{JourneyDetailsAttribute, JourneyDetailsHimNotice};
 
 use crate::{
     cache::{CachableObject, Cache},
-    error::{ErrorDomain, RailboardApiError, RailboardResult},
+    error::RailboardResult,
     types::{Attribute, HimNotice, Time},
 };
 
@@ -154,23 +152,6 @@ impl From<JourneyDetailsAttribute> for Attribute {
         Attribute {
             text: attribute.text,
             key: attribute.key,
-        }
-    }
-}
-
-impl From<JourneyDetailsError> for RailboardApiError {
-    fn from(value: JourneyDetailsError) -> Self {
-        match value {
-            JourneyDetailsError::FailedRequest(err) => RailboardApiError {
-                domain: ErrorDomain::Request,
-                message: format!("Failed to get journey details from Vendo: {}", err),
-                error: None,
-            },
-            JourneyDetailsError::VendoError(err) => RailboardApiError {
-                domain: ErrorDomain::Vendo,
-                message: format!("Failed to get journey details from Vendo: {}", err),
-                error: Some(serde_json::to_value(err).unwrap()),
-            },
         }
     }
 }

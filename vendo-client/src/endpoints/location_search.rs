@@ -1,4 +1,4 @@
-use crate::{VendoClient, VendoError};
+use crate::{VendoClient, VendoError, VendoOrRequestError};
 
 mod request;
 pub use request::*;
@@ -6,7 +6,6 @@ mod response;
 use reqwest::header::{HeaderValue, ACCEPT, CONTENT_TYPE};
 pub use response::*;
 use serde::Deserialize;
-use thiserror::Error;
 
 const VENDO_LOCATION_SEARCH_HEADER: &str = "application/x.db.vendo.mob.location.v3+json";
 
@@ -15,7 +14,7 @@ impl VendoClient {
         &self,
         query: String,
         location_types: Option<Vec<String>>,
-    ) -> Result<Vec<LocationSearchResult>, LocationSearchError> {
+    ) -> Result<Vec<LocationSearchResult>, VendoOrRequestError> {
         let _permit = self.semaphore.acquire().await;
 
         let location_types = location_types.unwrap_or_default();
@@ -49,7 +48,7 @@ impl VendoClient {
         match response {
             VendoLocationSearchResponse::VendoResponse(response) => Ok(response),
             VendoLocationSearchResponse::VendoError(error) => {
-                Err(LocationSearchError::VendoError(error))
+                Err(VendoOrRequestError::VendoError(error))
             }
         }
     }
@@ -60,12 +59,4 @@ impl VendoClient {
 enum VendoLocationSearchResponse {
     VendoResponse(Vec<LocationSearchResult>),
     VendoError(VendoError),
-}
-
-#[derive(Error, Debug)]
-pub enum LocationSearchError {
-    #[error("Vendo returned an error.")]
-    VendoError(#[from] VendoError),
-    #[error(transparent)]
-    FailedRequest(#[from] reqwest::Error),
 }

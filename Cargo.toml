@@ -1,2 +1,2 @@
 [workspace]
-members = ["railboard-api", "vendo-client"]
+members = ["railboard-api", "vendo-client", "iris-client"]

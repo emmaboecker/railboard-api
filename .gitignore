@@ -1,1 +1,7 @@
 /target
+
+# when I print something long to stdout I pipe it into a file
+output.txt
+
+# Iris schema response files that are not needed
+iris-client/schema/*

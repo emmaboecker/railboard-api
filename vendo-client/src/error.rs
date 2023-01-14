@@ -8,3 +8,11 @@ pub struct VendoError {
     pub code: String,
     pub status: String,
 }
+
+#[derive(Error, Debug)]
+pub enum VendoOrRequestError {
+    #[error("Vendo returned an error.")]
+    VendoError(#[from] VendoError),
+    #[error(transparent)]
+    FailedRequest(#[from] reqwest::Error),
+}

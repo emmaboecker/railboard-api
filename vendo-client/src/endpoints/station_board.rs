@@ -5,10 +5,9 @@ use reqwest::{
     Request, RequestBuilder,
 };
 use serde::Deserialize;
-use thiserror::Error;
 
-use crate::error::VendoError;
 use crate::VendoClient;
+use crate::{error::VendoError, VendoOrRequestError};
 
 mod request;
 pub use request::*;
@@ -21,7 +20,7 @@ impl VendoClient {
         station: &str,
         date: Option<DateTime<Tz>>,
         transport_types: Option<Vec<VendoTransportType>>,
-    ) -> Result<StationBoardArrivalsResponse, StationBoardError> {
+    ) -> Result<StationBoardArrivalsResponse, VendoOrRequestError> {
         let _permit = self.semaphore.acquire().await;
 
         let request = self
@@ -33,7 +32,7 @@ impl VendoClient {
 
         match response {
             VendoArrivalsResponse::VendoResponse(response) => Ok(*response),
-            VendoArrivalsResponse::VendoError(error) => Err(StationBoardError::VendoError(error)),
+            VendoArrivalsResponse::VendoError(error) => Err(VendoOrRequestError::VendoError(error)),
         }
     }
 
@@ -42,7 +41,7 @@ impl VendoClient {
         station: &str,
         date: Option<DateTime<Tz>>,
         transport_types: Option<Vec<VendoTransportType>>,
-    ) -> Result<StationBoardDeparturesResponse, StationBoardError> {
+    ) -> Result<StationBoardDeparturesResponse, VendoOrRequestError> {
         let _permit = self.semaphore.acquire().await;
 
         let request = self
@@ -54,7 +53,9 @@ impl VendoClient {
 
         match response {
             VendoDeparturesResponse::VendoResponse(response) => Ok(*response),
-            VendoDeparturesResponse::VendoError(error) => Err(StationBoardError::VendoError(error)),
+            VendoDeparturesResponse::VendoError(error) => {
+                Err(VendoOrRequestError::VendoError(error))
+            }
         }
     }
 }
@@ -116,12 +117,4 @@ enum VendoArrivalsResponse {
 enum VendoDeparturesResponse {
     VendoResponse(Box<StationBoardDeparturesResponse>),
     VendoError(VendoError),
-}
-
-#[derive(Error, Debug)]
-pub enum StationBoardError {
-    #[error("Vendo returned an error.")]
-    VendoError(#[from] VendoError),
-    #[error(transparent)]
-    FailedRequest(#[from] reqwest::Error),
 }

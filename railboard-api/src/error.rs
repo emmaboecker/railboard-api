@@ -4,6 +4,7 @@ use axum::{response::IntoResponse, Json};
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use vendo_client::VendoOrRequestError;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RailboardApiError {
@@ -41,6 +42,23 @@ impl From<ParseIntError> for RailboardApiError {
             domain: ErrorDomain::Input,
             message: format!("Required Integer but found: {}", value),
             error: None,
+        }
+    }
+}
+
+impl From<VendoOrRequestError> for RailboardApiError {
+    fn from(value: VendoOrRequestError) -> Self {
+        match value {
+            VendoOrRequestError::FailedRequest(err) => RailboardApiError {
+                domain: ErrorDomain::Request,
+                message: format!("Failed to get station board from Vendo: {}", err),
+                error: None,
+            },
+            VendoOrRequestError::VendoError(err) => RailboardApiError {
+                domain: ErrorDomain::Vendo,
+                message: format!("Failed to get station board from Vendo: {}", err),
+                error: Some(serde_json::to_value(err).unwrap()),
+            },
         }
     }
 }
