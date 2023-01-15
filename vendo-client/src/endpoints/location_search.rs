@@ -10,6 +10,7 @@ use serde::Deserialize;
 const VENDO_LOCATION_SEARCH_HEADER: &str = "application/x.db.vendo.mob.location.v3+json";
 
 impl VendoClient {
+    /// Search for a location (e.G. Station).
     pub async fn location_search(
         &self,
         query: String,

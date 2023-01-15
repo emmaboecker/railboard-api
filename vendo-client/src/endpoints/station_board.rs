@@ -15,6 +15,13 @@ mod response;
 pub use response::*;
 
 impl VendoClient {
+    /// Get the arrival station board for a station at a specific date.
+    ///
+    /// The station should be given in the as the eva number (e.G. `8000105`) \
+    /// or Location ID (e.G. `A=1@O=Frankfurt(Main)Hbf@X=8663785@Y=50107149@U=80@L=8000105@B=1@p=1673463547@`).
+    /// If no date is provided, the current date is used.
+    /// Transport types can be provided to filter the results.
+    /// If no transport types are provided, all transport types are being returned.
     pub async fn station_board_arrivals(
         &self,
         station: &str,
@@ -36,6 +43,13 @@ impl VendoClient {
         }
     }
 
+    /// Get the departure station board for a station at a specific date.
+    ///
+    /// The station should be given in the as the eva number (e.G. `8000105`) \
+    /// or Location ID (e.G. `A=1@O=Frankfurt(Main)Hbf@X=8663785@Y=50107149@U=80@L=8000105@B=1@p=1673463547@`).
+    /// If no date is provided, the current date is used.
+    /// Transport types can be provided to filter the results.
+    /// If no transport types are provided, all transport types are being returned.
     pub async fn station_board_departures(
         &self,
         station: &str,

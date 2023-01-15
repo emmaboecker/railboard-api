@@ -7,9 +7,9 @@ pub struct IrisError;
 
 #[derive(Error, Debug)]
 pub enum IrisOrRequestError {
-    #[error("Vendo returned an error.")]
+    #[error("Iris returned an error.")]
     IrisError(#[from] IrisError),
-    #[error("Iris returned invalid XML.")]
+    #[error("Iris returned invalid/unrecognized XML: {0}")]
     InvalidXML(#[from] serde_xml_rs::Error),
     #[error(transparent)]
     FailedRequest(#[from] reqwest::Error),
