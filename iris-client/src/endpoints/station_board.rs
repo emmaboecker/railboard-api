@@ -23,6 +23,8 @@ impl IrisClient {
 
         let response: String = response.text().await?;
 
+        println!("{}", response);
+
         let response: TimeTable = serde_xml_rs::from_str(&response)?;
 
         Ok(response.into())
@@ -109,12 +111,10 @@ pub struct ArrivalOrDeparture {
 
 impl From<TimeTable> for StationBoard {
     fn from(timetable: TimeTable) -> Self {
-        let station_name = timetable.station;
+        let station_name = timetable.station_name;
         let station_eva = timetable.eva;
 
-        for _train in timetable.items {
-
-        }
+        for _train in timetable.stops {}
 
         Self {
             station_name,
