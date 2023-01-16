@@ -1,5 +1,5 @@
-use chrono::{DateTime, Utc};
-use chrono_tz::Tz;
+use chrono::{DateTime, TimeZone};
+use chrono_tz::{Europe::Berlin, Tz};
 use reqwest::{
     header::{HeaderValue, ACCEPT, CONTENT_TYPE},
     Request, RequestBuilder,
@@ -92,8 +92,8 @@ impl StationBoardRequest for RequestBuilder {
         date: Option<DateTime<Tz>>,
         transport_types: Option<Vec<VendoTransportType>>,
     ) -> Result<Request, reqwest::Error> {
-        let current_date = Utc::now().with_timezone(&Tz::UTC);
-        let date = date.unwrap_or(current_date);
+        let date =
+            date.unwrap_or_else(|| Berlin.from_utc_datetime(&chrono::Utc::now().naive_utc()));
 
         let body = VendoStationBoardRequest {
             station: station.to_string(),
