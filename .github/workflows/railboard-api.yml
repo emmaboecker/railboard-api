@@ -1,11 +1,8 @@
 name: Docker Build & Release
 
 on:
-  workflow_run:
-    workflows: ["Run Tests"]
+  push:
     branches: [main]
-    types:
-      - completed
 
 jobs:
   docker:
