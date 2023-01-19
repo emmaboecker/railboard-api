@@ -114,22 +114,22 @@ pub fn from_iris_timetable(
                     DiffResult::Common(same) => {
                         route.push(RouteStop {
                             name: current_path[same.new_index.unwrap()].to_string(),
-                            cancelled: None,
-                            added: None,
+                            cancelled: false,
+                            added: false,
                         });
                     }
                     DiffResult::Added(add) => {
                         route.push(RouteStop {
                             name: current_path[add.new_index.unwrap()].to_string(),
-                            cancelled: None,
-                            added: Some(true),
+                            cancelled: false,
+                            added: true,
                         });
                     }
                     DiffResult::Removed(rem) => {
                         route.push(RouteStop {
                             name: old[rem.old_index.unwrap()].to_string(),
-                            cancelled: Some(true),
-                            added: None,
+                            cancelled: true,
+                            added: false,
                         });
                     }
                 }
@@ -138,8 +138,8 @@ pub fn from_iris_timetable(
             for stop in stops.split("|") {
                 route.push(RouteStop {
                     name: stop.to_string(),
-                    cancelled: None,
-                    added: None,
+                    cancelled: false,
+                    added: false,
                 });
             }
         }
@@ -150,8 +150,8 @@ pub fn from_iris_timetable(
 
     route.push(RouteStop {
         name: String::from(station_name),
-        cancelled: cancelled.to_option(),
-        added: added.to_option(),
+        cancelled: cancelled,
+        added: added,
     });
 
     if let Some(stops) = stop
@@ -179,22 +179,22 @@ pub fn from_iris_timetable(
                     DiffResult::Common(same) => {
                         route.push(RouteStop {
                             name: current_path[same.new_index.unwrap()].to_string(),
-                            cancelled: None,
-                            added: None,
+                            cancelled: false,
+                            added: false,
                         });
                     }
                     DiffResult::Added(add) => {
                         route.push(RouteStop {
                             name: current_path[add.new_index.unwrap()].to_string(),
-                            cancelled: None,
-                            added: Some(true),
+                            cancelled: false,
+                            added: true,
                         });
                     }
                     DiffResult::Removed(rem) => {
                         route.push(RouteStop {
                             name: old[rem.old_index.unwrap()].to_string(),
-                            cancelled: Some(true),
-                            added: None,
+                            cancelled: true,
+                            added: false,
                         });
                     }
                 }
@@ -203,8 +203,8 @@ pub fn from_iris_timetable(
             for stop in stops.split("|") {
                 route.push(RouteStop {
                     name: stop.to_string(),
-                    cancelled: None,
-                    added: None,
+                    cancelled: false,
+                    added: false,
                 });
             }
         }
@@ -314,21 +314,5 @@ pub fn from_iris_timetable(
             .map(|trip_label| trip_label.train_number.to_owned())
             .unwrap()
             .to_owned(),
-    }
-}
-
-trait ToOption {
-    fn to_option(self) -> Option<Self>
-    where
-        Self: Sized;
-}
-
-impl ToOption for bool {
-    fn to_option(self) -> Option<Self> {
-        if self {
-            Some(self)
-        } else {
-            None
-        }
     }
 }
