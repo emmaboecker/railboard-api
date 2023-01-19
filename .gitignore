@@ -5,3 +5,7 @@ output.txt
 
 # Iris schema response files that are not needed
 iris-client/schema/*
+
+# Editor folders and files
+.idea
+.vscode
