@@ -13,6 +13,8 @@ use crate::helpers::parse_iris_date;
 
 use super::response::{EventStatus, TimetableStop};
 
+use wu_diff::*;
+
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct IrisStationBoard {
@@ -92,41 +94,64 @@ pub fn from_iris_timetable(
         .as_ref()
         .map(|arr| arr.planned_path.as_ref().unwrap())
     {
-        let current_path = realtime
+        let current_path: Option<Vec<&str>> = realtime
             .as_ref()
             .map(|realtime| {
                 realtime
                     .arrival
                     .as_ref()
-                    .map(|real_dep| real_dep.changed_path.to_owned())
+                    .map(|real_dep| real_dep.changed_path.as_ref())
             })
             .flatten()
             .flatten()
-            .map(|path| {
-                let path = path
-                    .clone()
-                    .split("|")
-                    .map(|string| string.to_owned())
-                    .collect::<Vec<String>>();
-                path
-            });
+            .map(|path| path.split("|").collect());
 
-        for stop in stops.split("|") {
-            let cancelled = current_path
-                .as_ref()
-                .map(|path| path.contains(&stop.to_owned()))
-                .unwrap_or(false);
+        if let Some(current_path) = current_path {
+            let old = stops.split("|").collect::<Vec<&str>>();
 
-            route.push(RouteStop {
-                name: stop.to_string(),
-                cancelled,
-            });
+            for diff in wu_diff::diff(&old, &current_path) {
+                match diff {
+                    DiffResult::Common(same) => {
+                        route.push(RouteStop {
+                            name: current_path[same.new_index.unwrap()].to_string(),
+                            cancelled: None,
+                            added: None,
+                        });
+                    }
+                    DiffResult::Added(add) => {
+                        route.push(RouteStop {
+                            name: current_path[add.new_index.unwrap()].to_string(),
+                            cancelled: None,
+                            added: Some(true),
+                        });
+                    }
+                    DiffResult::Removed(rem) => {
+                        route.push(RouteStop {
+                            name: old[rem.old_index.unwrap()].to_string(),
+                            cancelled: Some(true),
+                            added: None,
+                        });
+                    }
+                }
+            }
+        } else {
+            for stop in stops.split("|") {
+                route.push(RouteStop {
+                    name: stop.to_string(),
+                    cancelled: None,
+                    added: None,
+                });
+            }
         }
     }
 
+    let cancelled = event_status == Some(EventStatus::Cancelled);
+    let added = event_status == Some(EventStatus::Added);
+
     route.push(RouteStop {
         name: String::from(station_name),
-        cancelled: event_status == Some(EventStatus::Cancelled),
+        cancelled: cancelled.to_option(),
+        added: added.to_option(),
     });
 
     if let Some(stops) = stop
@@ -146,16 +171,42 @@ pub fn from_iris_timetable(
             .flatten()
             .map(|path| path.split("|").collect());
 
-        for stop in stops.split("|") {
-            let cancelled = current_path
-                .as_ref()
-                .map(|path| path.contains(&stop))
-                .unwrap_or(false);
+        if let Some(current_path) = current_path {
+            let old = stops.split("|").collect::<Vec<&str>>();
 
-            route.push(RouteStop {
-                name: stop.to_string(),
-                cancelled,
-            });
+            for diff in wu_diff::diff(&old, &current_path) {
+                match diff {
+                    DiffResult::Common(same) => {
+                        route.push(RouteStop {
+                            name: current_path[same.new_index.unwrap()].to_string(),
+                            cancelled: None,
+                            added: None,
+                        });
+                    }
+                    DiffResult::Added(add) => {
+                        route.push(RouteStop {
+                            name: current_path[add.new_index.unwrap()].to_string(),
+                            cancelled: None,
+                            added: Some(true),
+                        });
+                    }
+                    DiffResult::Removed(rem) => {
+                        route.push(RouteStop {
+                            name: old[rem.old_index.unwrap()].to_string(),
+                            cancelled: Some(true),
+                            added: None,
+                        });
+                    }
+                }
+            }
+        } else {
+            for stop in stops.split("|") {
+                route.push(RouteStop {
+                    name: stop.to_string(),
+                    cancelled: None,
+                    added: None,
+                });
+            }
         }
     }
 
@@ -263,5 +314,21 @@ pub fn from_iris_timetable(
             .map(|trip_label| trip_label.train_number.to_owned())
             .unwrap()
             .to_owned(),
+    }
+}
+
+trait ToOption {
+    fn to_option(self) -> Option<Self>
+    where
+        Self: Sized;
+}
+
+impl ToOption for bool {
+    fn to_option(self) -> Option<Self> {
+        if self {
+            Some(self)
+        } else {
+            None
+        }
     }
 }

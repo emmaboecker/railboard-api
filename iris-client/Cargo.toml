@@ -20,6 +20,7 @@ thiserror = "1.0.38"
 
 urlencoding = "2.1.2"
 futures = "0.3.25"
+wu-diff = "0.1.2"
 
 
 [dev-dependencies]

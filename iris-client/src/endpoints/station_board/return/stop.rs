@@ -26,7 +26,8 @@ pub struct StationBoardStop {
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
 pub struct RouteStop {
     pub name: String,
-    pub cancelled: bool,
+    pub cancelled: Option<bool>,
+    pub added: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
