@@ -61,6 +61,8 @@ pub struct JourneyDetailsStop {
     pub notes: Vec<JourneyDetailsNotice>,
     #[serde(rename = "himNotizen")]
     pub him_notices: Vec<JourneyDetailsHimNotice>,
+    #[serde(rename = "serviceNotiz")]
+    pub service_note: Option<JourneyDetailsAttribute>,
     #[serde(rename = "attributNotizen")]
     pub attributes: Vec<JourneyDetailsAttribute>,
 }

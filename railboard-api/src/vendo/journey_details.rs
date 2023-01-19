@@ -63,6 +63,7 @@ pub async fn journey_details(
                     .into_iter()
                     .map(|from| from.into())
                     .collect(),
+                service_note: stop.service_note.map(|service| service.into()),
             })
             .collect(),
 
@@ -135,6 +136,7 @@ pub struct Stop {
     pub notes: Vec<String>,
     pub him_notices: Vec<HimNotice>,
     pub attributes: Vec<Attribute>,
+    pub service_note: Option<Attribute>,
 }
 
 impl From<JourneyDetailsHimNotice> for HimNotice {
