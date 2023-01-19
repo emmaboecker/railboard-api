@@ -9,7 +9,7 @@ pub struct LocationSearchResult {
     pub location_type: String,
     pub name: String,
     pub products: Vec<String>,
-    pub weight: i32,
+    pub weight: Option<i32>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
