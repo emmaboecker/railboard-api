@@ -29,7 +29,11 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 async-trait = "0.1.61"
 
 # Caching
-redis = { version = "0.22.2", features = ["tokio-comp", "json"] }
+redis = { version = "0.22.2", features = [
+    "tokio-comp",
+    "json",
+    "connection-manager",
+] }
 dotenvy = "0.15.6"
 erased-serde = "0.3.24"
 futures = "0.3.25"

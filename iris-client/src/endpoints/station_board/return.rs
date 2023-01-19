@@ -190,6 +190,11 @@ pub fn from_iris_timetable(
                 planned_time: DateTime::<FixedOffset>::from_utc(plan_date.naive_utc(), plan_offset),
                 real_time: real_date
                     .map(|date| DateTime::<FixedOffset>::from_utc(date.naive_utc(), real_offset)),
+                wings: arrival
+                    .wings
+                    .as_ref()
+                    .map(|wings| wings.split("|").map(|string| string.to_string()).collect())
+                    .unwrap_or_default(),
                 origin: route.first().unwrap().name.to_owned(),
             }
         }),
@@ -216,6 +221,11 @@ pub fn from_iris_timetable(
                 planned_time: DateTime::<FixedOffset>::from_utc(plan_date.naive_utc(), plan_offset),
                 real_time: real_date
                     .map(|date| DateTime::<FixedOffset>::from_utc(date.naive_utc(), real_offset)),
+                wings: departure
+                    .wings
+                    .as_ref()
+                    .map(|wings| wings.split("|").map(|string| string.to_string()).collect())
+                    .unwrap_or_default(),
                 direction: route.last().unwrap().name.to_owned(),
             }
         }),

@@ -12,6 +12,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "arc-swap"
+version = "1.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bddcadddf5e9015d310179a59bb28c4d4b9920ad0f11e8e14dbadf654890c9a6"
+
+[[package]]
 name = "async-lock"
 version = "2.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -908,9 +914,11 @@ version = "0.22.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5c1aada340fba5deba625c84d109d0a83cc3565452d38083417992a702c2428d"
 dependencies = [
+ "arc-swap",
  "async-trait",
  "bytes",
  "combine",
+ "futures",
  "futures-util",
  "itoa",
  "percent-encoding",

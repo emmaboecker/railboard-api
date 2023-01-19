@@ -34,6 +34,7 @@ pub struct RouteStop {
 pub struct StationBoardStopArrival {
     pub planned_time: DateTime<FixedOffset>,
     pub real_time: Option<DateTime<FixedOffset>>,
+    pub wings: Vec<String>,
     pub origin: String,
 }
 
@@ -42,5 +43,6 @@ pub struct StationBoardStopArrival {
 pub struct StationBoardStopDeparture {
     pub planned_time: DateTime<FixedOffset>,
     pub real_time: Option<DateTime<FixedOffset>>,
+    pub wings: Vec<String>,
     pub direction: String,
 }
