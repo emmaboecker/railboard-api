@@ -6,6 +6,8 @@ pub use error::*;
 mod endpoints;
 pub use endpoints::*;
 
+pub mod helpers;
+
 pub struct IrisClient {
     client: reqwest::Client,
     base_url: String,

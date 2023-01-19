@@ -21,7 +21,7 @@ pub async fn journey_details(
 ) -> RailboardResult<Json<JoruneyDetails>> {
     if let Some(cached) = state
         .cache
-        .get_from_id(&format!("journey-details.{}", &id))
+        .get_from_id(&format!("vendo.journey-details.{}", &id))
         .await
     {
         return Ok(Json(cached));

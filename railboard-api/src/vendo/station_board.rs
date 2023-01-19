@@ -48,7 +48,7 @@ pub async fn station_board(
     if let Some(cached) = state
         .cache
         .get_from_id(&format!(
-            "station-board.{}.{}.{}",
+            "vendo.station-board.{}.{}.{}",
             id,
             date.format("%Y-%m-%d"),
             date.format("%H:%M")

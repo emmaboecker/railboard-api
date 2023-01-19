@@ -1,19 +1,26 @@
-mod response;
+pub mod response;
+mod r#return;
 
 use chrono::{DateTime, Duration, TimeZone, Timelike};
 use chrono_tz::{Europe::Berlin, Tz};
-pub use response::*;
+
+pub use r#return::*;
+
+use response::*;
 
 use crate::{IrisClient, IrisError, IrisOrRequestError};
 
 impl IrisClient {
+    /// Fetches all planned information IRIS has for a specific station at the specified time frame \
+    /// and the realtime information IRIS currently has for the specified station and combines them into a \
+    /// better format that is easier to work with.
     pub async fn station_board(
         &self,
         eva: &str,
         date: Option<DateTime<Tz>>,
         lookahead: Option<u32>,
         lookbehind: Option<u32>,
-    ) -> Result<TimeTable, IrisOrRequestError> {
+    ) -> Result<IrisStationBoard, IrisOrRequestError> {
         let date =
             date.unwrap_or_else(|| Berlin.from_utc_datetime(&chrono::Utc::now().naive_utc()));
 
@@ -41,16 +48,46 @@ impl IrisClient {
             }))
         );
 
-        let _realtime = realtime?;
-        let _timetables = timetables
+        let realtime = realtime?;
+        let timetables = timetables
             .into_iter()
             .filter_map(|result| result.ok())
             .collect::<Vec<_>>();
 
-        todo!()
+        let disruptions = realtime
+            .disruptions
+            .into_iter()
+            .map(|message| message.into())
+            .collect::<Vec<r#return::Message>>();
+
+        let mut stops = Vec::new();
+
+        for timetable in timetables {
+            for stop in timetable.stops {
+                let realtime = realtime
+                    .stops
+                    .iter()
+                    .find(|realtime_stop| realtime_stop.id == stop.id);
+                stops.push(from_iris_timetable(
+                    &eva,
+                    &timetable.station_name,
+                    stop,
+                    realtime.map(|realtime| realtime.to_owned()),
+                ));
+            }
+        }
+
+        Ok(IrisStationBoard {
+            station_name: realtime.station_name,
+            station_eva: String::from(eva),
+            disruptions,
+            stops,
+        })
     }
 
     /// Get all realtime information IRIS currently has for a specific station.
+    ///
+    /// **Consider using [`station_board`](IrisClient::station_board) instead.** \
     ///
     /// Takes the eva number of the station e.G. `8000105` for Frankfurt(Main)Hbf.
     pub async fn realtime_station_board(&self, eva: &str) -> Result<TimeTable, IrisOrRequestError> {
@@ -76,6 +113,8 @@ impl IrisClient {
     /// Get all planned information IRIS has for a specific station at the specified date + hour.
     ///
     /// From experience IRIS does not have any more planned data than the current day + maybe a bit of the early hours of the next day.
+    ///
+    /// **Consider using [`station_board`](IrisClient::station_board) instead.** \
     ///
     /// Takes the eva number of the station e.G. `8000105` for Frankfurt(Main)Hbf. \
     /// the date in the format `YYMMDD` \

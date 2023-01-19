@@ -1,20 +1,20 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 /// A timetable is made of a set of TimetableStops and a potential Disruption
 pub struct TimeTable {
     #[serde(rename = "station")]
     /// Station name
     pub station_name: String,
     /// EVA station number
-    pub eva: String,
+    pub eva: Option<String>,
     #[serde(rename = "m", default)]
     pub disruptions: Vec<Message>,
     #[serde(rename = "s", default)]
     pub stops: Vec<TimetableStop>,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 /// A stop is a part of a Timetable
 pub struct TimetableStop {
     /// An id that uniquely identifies the stop. It consists of the following three elements separated by dashes
@@ -26,11 +26,11 @@ pub struct TimetableStop {
     pub id: String,
     #[serde(rename = "eva")]
     /// The eva code of the station of this stop. Example '8000105' for Frankfurt(Main)Hbf
-    pub eva_number: String,
-    #[serde(rename = "ar")]
-    pub arrival: Option<ArrivalDeparture>,
+    pub eva_number: Option<String>,
     #[serde(rename = "dp")]
     pub departure: Option<ArrivalDeparture>,
+    #[serde(rename = "ar")]
+    pub arrival: Option<ArrivalDeparture>,
     #[serde(rename = "tl")]
     pub trip_label: Option<TripLabel>,
     #[serde(rename = "m")]
@@ -44,7 +44,7 @@ pub struct TimetableStop {
     pub reference_trip_relation: Option<ReferenceTripRelation>,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 /// A reference trip relation holds how a reference trip is related to a stop, for instance the reference trip starts after the stop. Stop contains a collection of that type, only if reference trips are available
 pub struct ReferenceTripRelation {
     #[serde(rename = "rt")]
@@ -55,7 +55,7 @@ pub struct ReferenceTripRelation {
     pub relation: ReplationType,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub enum ReplationType {
     #[serde(rename = "b")]
     /// The reference trip ends before that stop
@@ -74,7 +74,7 @@ pub enum ReplationType {
     After,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct RealTrip {
     /// An id that uniquely identifies the reference trip. It consists of the following two elements separated by dashes:
     ///
@@ -96,7 +96,7 @@ pub struct RealTrip {
     pub sd: ReferenceTripStopCharacterization,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct ReferenceTripStopCharacterization {
     /// The eva number of the correspondent stop of the regular trip
     pub eva: String,
@@ -110,7 +110,7 @@ pub struct ReferenceTripStopCharacterization {
     pub planned_time: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct ReferenceTripCharacterization {
     #[serde(rename = "c")]
     /// Trip category, e.g. \"ICE\" or \"RE\"
@@ -120,7 +120,7 @@ pub struct ReferenceTripCharacterization {
     pub number: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 /// A message that is associated with an event, a stop or a trip
 pub struct Message {
     pub id: String,
@@ -153,9 +153,12 @@ pub struct Message {
     pub trip_label: Option<Vec<TripLabel>>,
     #[serde(rename = "dm")]
     pub distributor_messages: Option<Vec<DistributorMessage>>,
+    #[serde(rename = "ts")]
+    /// The time, in ten digit 'YYMMddHHmm' format, e.g. '1404011437' for 14:37 on April the 1st of 2014.
+    pub timestamp: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 /// An additional message to a given station-based disruption by a specific distributor.
 pub struct DistributorMessage {
     #[serde(rename = "int")]
@@ -169,7 +172,7 @@ pub struct DistributorMessage {
     pub timestamp: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub enum MessagePriority {
     #[serde(rename = "1")]
     High,
@@ -181,7 +184,7 @@ pub enum MessagePriority {
     Done,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub enum DistributorType {
     #[serde(rename = "s")]
     City,
@@ -193,7 +196,7 @@ pub enum DistributorType {
     Other,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub enum MessageStatus {
     #[serde(rename = "h")]
     /// A HIM message (generated through the Hafas Information Manager)
@@ -221,7 +224,7 @@ pub enum MessageStatus {
     Connection,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 /// Contains common data items that characterize a Trip
 pub struct TripLabel {
     #[serde(rename = "c")]
@@ -239,7 +242,7 @@ pub struct TripLabel {
     pub trip_type: Option<TripType>,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum TripType {
     P,
@@ -250,7 +253,7 @@ pub enum TripType {
     N,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct Reference {
     #[serde(rename = "rt", default)]
     /// The referred trips reference trip elements
@@ -259,7 +262,7 @@ pub struct Reference {
     pub trip_label: TripLabel,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 /// An event (arrival or departure) that is part of a stop
 pub struct ArrivalDeparture {
     #[serde(rename = "cde")]
@@ -272,7 +275,7 @@ pub struct ArrivalDeparture {
     #[serde(rename = "cpth")]
     pub changed_path: Option<String>,
     #[serde(rename = "cs")]
-    pub real_event_status: Option<String>,
+    pub real_event_status: Option<EventStatus>,
     #[serde(rename = "ct")]
     /// New estimated or actual departure or arrival time. The time, in ten digit 'YYMMddHHmm' format, e.g. '1404011437' for 14:37 on April the 1st of 2014
     pub changed_time: Option<String>,
@@ -281,17 +284,18 @@ pub struct ArrivalDeparture {
     #[serde(rename = "hi")]
     /// 1 if the event should not be shown on WBT because travellers are not supposed to enter or exit the train at this stop
     pub hidden: Option<u8>,
+    #[serde(rename = "l")]
     /// The line indicator (e.g. \"3\" for an S-Bahn or \"45S\" for a bus)
     pub line_indicator: Option<String>,
     #[serde(default, rename = "m")]
-    pub messages: Option<Vec<Message>>,
+    pub messages: Vec<Message>,
     #[serde(rename = "pde")]
     pub planned_distant_endpoint: Option<String>,
     #[serde(rename = "pp")]
     pub planned_platform: Option<String>,
     #[serde(rename = "ppth")]
     /// A sequence of station names separated by the pipe symbols ('|'). \
-    /// E.g.: 'Mainz Hbf|Rüsselsheim|Frankfrt(M) Flughafen'. \
+    /// E.g.: 'Mainz Hbf|Rüsselsheim|Frankfurt(M) Flughafen'. \
     /// For arrival, the path indicates the stations that come before the current station. The first element then is the trip's start station. \
     /// For departure, the path indicates the stations that come after the current station. The last element in the path then is the trip's destination station. \
     /// Note that the current station is never included in the path (neither for arrival nor for departure).\n
@@ -309,20 +313,20 @@ pub struct ArrivalDeparture {
     pub wings: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub enum EventStatus {
     #[serde(rename = "p")]
     /// The event was planned. This status is also used when the cancellation of an event has been revoked
     Planned,
     #[serde(rename = "c")]
-    /// The event was added to the planned data (new stop)
-    Canceled,
+    /// The event was cancelled (as changedstatus, can apply to planned and added stops)
+    Cancelled,
     #[serde(rename = "a")]
-    /// The event was canceled (as changedstatus, can apply to planned and added stops)
+    /// The event was added to the planned data (new stop)
     Added,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 /// Information about a connected train at a particular stop
 pub struct Connection {
     #[serde(rename = "cs")]
@@ -336,7 +340,7 @@ pub struct Connection {
     pub timestamp: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub enum ConnectionStatus {
     #[serde(rename = "w")]
     /// This (regular) connection is waiting

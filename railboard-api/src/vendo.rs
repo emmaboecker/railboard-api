@@ -14,7 +14,7 @@ pub struct VendoState {
     cache: RedisCache,
 }
 
-pub fn router(redis: redis::Client) -> Router {
+pub fn router(redis: Arc<redis::Client>) -> Router {
     let vendo_client = VendoClient::default();
 
     let shared_state = Arc::new(VendoState {

@@ -1,3 +1,6 @@
+use std::sync::Arc;
+
+use iris_client::station_board::response::TimeTable;
 use redis::JsonAsyncCommands;
 use serde::{de::DeserializeOwned, Serialize};
 use thiserror::Error;
@@ -30,11 +33,11 @@ pub enum CacheInsertError {
 }
 
 pub struct RedisCache {
-    pub redis_client: redis::Client,
+    pub redis_client: Arc<redis::Client>,
 }
 
 impl RedisCache {
-    pub fn new(redis_client: redis::Client) -> Self {
+    pub fn new(redis_client: Arc<redis::Client>) -> Self {
         Self { redis_client }
     }
 }
@@ -116,7 +119,7 @@ pub trait CachableObject {
 #[async_trait::async_trait]
 impl CachableObject for StationBoard {
     async fn insert_to_cache<C: Cache>(&self, cache: &C) -> Result<(), CacheInsertError> {
-        let key = format!("station-board.{}.{}.{}", self.id, self.day, self.time);
+        let key = format!("vendo.station-board.{}.{}.{}", self.id, self.day, self.time);
 
         cache.insert_to_cache(key, self, 90).await
     }
@@ -125,7 +128,7 @@ impl CachableObject for StationBoard {
 #[async_trait::async_trait]
 impl CachableObject for LocationSearchCache {
     async fn insert_to_cache<C: Cache>(&self, cache: &C) -> Result<(), CacheInsertError> {
-        let key = format!("location-search.{}", self.query);
+        let key = format!("vendo.location-search.{}", self.query);
 
         cache.insert_to_cache(key, self, 60 * 60 * 24 * 7).await
     }
@@ -134,8 +137,26 @@ impl CachableObject for LocationSearchCache {
 #[async_trait::async_trait]
 impl CachableObject for JoruneyDetails {
     async fn insert_to_cache<C: Cache>(&self, cache: &C) -> Result<(), CacheInsertError> {
-        let key = format!("journey-details.{}", self.journey_id);
+        let key = format!("vendo.journey-details.{}", self.journey_id);
 
         cache.insert_to_cache(key, self, 90).await
+    }
+}
+
+#[async_trait::async_trait]
+impl CachableObject for (TimeTable, String, String, String) {
+    async fn insert_to_cache<C: Cache>(&self, cache: &C) -> Result<(), CacheInsertError> {
+        let key = format!("iris.station-board.plan.{}.{}.{}", self.1, self.2, self.3);
+
+        cache.insert_to_cache(key, &self.0, 180).await
+    }
+}
+
+#[async_trait::async_trait]
+impl CachableObject for (TimeTable, String) {
+    async fn insert_to_cache<C: Cache>(&self, cache: &C) -> Result<(), CacheInsertError> {
+        let key = format!("iris.station-board.realtime.{}", self.1);
+
+        cache.insert_to_cache(key, &self.0, 30).await
     }
 }

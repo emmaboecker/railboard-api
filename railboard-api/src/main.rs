@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use axum::{Router, Server};
 use dotenvy::dotenv;
 use tracing::metadata::LevelFilter;
@@ -6,6 +8,8 @@ use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 pub mod cache;
 pub mod error;
 pub mod types;
+
+pub mod iris;
 pub mod vendo;
 
 #[tokio::main]
@@ -32,8 +36,11 @@ async fn main() {
         redis::Client::open(redis_url).expect("Failed create redis client, check redis url")
     };
 
+    let redis_client = Arc::new(redis_client);
+
     let app = Router::new()
-        .nest("/vendo/v1", vendo::router(redis_client))
+        .nest("/vendo/v1", vendo::router(redis_client.clone()))
+        .nest("/iris/v1", iris::router(redis_client.clone()))
         .fallback(|| async { "Nothing here :/" });
     let server = Server::bind(&"0.0.0.0:8080".parse().unwrap()).serve(app.into_make_service());
     tracing::info!("Listening on http://localhost:8080/");

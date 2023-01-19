@@ -1,6 +1,7 @@
 use std::num::ParseIntError;
 
 use axum::{response::IntoResponse, Json};
+use iris_client::IrisOrRequestError;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -58,6 +59,28 @@ impl From<VendoOrRequestError> for RailboardApiError {
                 domain: ErrorDomain::Vendo,
                 message: format!("Failed to get station board from Vendo: {}", err),
                 error: Some(serde_json::to_value(err).unwrap()),
+            },
+        }
+    }
+}
+
+impl From<IrisOrRequestError> for RailboardApiError {
+    fn from(value: IrisOrRequestError) -> Self {
+        match value {
+            IrisOrRequestError::FailedRequest(err) => RailboardApiError {
+                domain: ErrorDomain::Request,
+                message: format!("Failed to get from Iris: {}", err),
+                error: None,
+            },
+            IrisOrRequestError::IrisError(err) => RailboardApiError {
+                domain: ErrorDomain::Vendo,
+                message: format!("Failed to get from Iris: {}", err),
+                error: Some(serde_json::to_value(err).unwrap()),
+            },
+            IrisOrRequestError::InvalidXML(err) => RailboardApiError {
+                domain: ErrorDomain::Vendo,
+                message: format!("Failed to get from Iris: {}", err),
+                error: None,
             },
         }
     }

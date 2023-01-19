@@ -874,6 +874,8 @@ dependencies = [
  "chrono-tz",
  "dotenvy",
  "erased-serde",
+ "futures",
+ "iris-client",
  "redis",
  "reqwest",
  "serde",
