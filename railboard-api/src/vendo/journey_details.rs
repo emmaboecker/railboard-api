@@ -122,7 +122,7 @@ pub struct JoruneyDetails {
 #[serde(rename_all = "camelCase")]
 pub struct TrainSchedule {
     pub regular_schedule: String,
-    pub days_of_operation: String,
+    pub days_of_operation: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

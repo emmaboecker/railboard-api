@@ -38,7 +38,7 @@ pub struct JourneyDetailsTrainSchedule {
     #[serde(rename = "regulaererFahrplan")]
     pub regular_schedule: String,
     #[serde(rename = "tageOhneFahrt")]
-    pub days_of_operation: String,
+    pub days_of_operation: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
