@@ -5,6 +5,7 @@ use axum::{
     Json,
 };
 use serde::{Deserialize, Serialize};
+use vendo_client::location_search::LocationSearchResult;
 
 use crate::{
     cache::{CachableObject, Cache},
@@ -16,7 +17,7 @@ use super::VendoState;
 pub async fn location_search(
     Path(query): Path<String>,
     State(state): State<Arc<VendoState>>,
-) -> RailboardResult<Json<Vec<vendo_client::location_search::LocationSearchResult>>> {
+) -> RailboardResult<Json<Vec<LocationSearchResult>>> {
     if let Some(cached) = state
         .cache
         .get_from_id::<LocationSearchCache>(&format!("vendo.location-search.{}", query))
@@ -25,10 +26,12 @@ pub async fn location_search(
         return Ok(Json(cached.results));
     }
 
-    let result = state
+    let result: Vec<LocationSearchResult> = state
         .vendo_client
         .location_search(query.clone(), None)
-        .await?;
+        .await?
+        .into_iter()
+        .collect();
 
     let location_search = LocationSearchCache {
         query,
@@ -43,5 +46,5 @@ pub async fn location_search(
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct LocationSearchCache {
     pub query: String,
-    pub results: Vec<vendo_client::location_search::LocationSearchResult>,
+    pub results: Vec<LocationSearchResult>,
 }

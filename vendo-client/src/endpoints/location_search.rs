@@ -44,7 +44,8 @@ impl VendoClient {
 
         headers.insert("x-correlation-id", HeaderValue::from_static("railboard"));
 
-        let response = self.client.execute(request).await?.json().await?;
+        let response: VendoLocationSearchResponse =
+            self.client.execute(request).await?.json().await?;
 
         match response {
             VendoLocationSearchResponse::VendoResponse(response) => Ok(response),

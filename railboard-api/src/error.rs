@@ -52,12 +52,12 @@ impl From<VendoOrRequestError> for RailboardApiError {
         match value {
             VendoOrRequestError::FailedRequest(err) => RailboardApiError {
                 domain: ErrorDomain::Request,
-                message: format!("Failed to get station board from Vendo: {}", err),
+                message: format!("Failed to get from Vendo: {}", err),
                 error: None,
             },
             VendoOrRequestError::VendoError(err) => RailboardApiError {
                 domain: ErrorDomain::Vendo,
-                message: format!("Failed to get station board from Vendo: {}", err),
+                message: format!("Failed to get from Vendo: {}", err),
                 error: Some(serde_json::to_value(err).unwrap()),
             },
         }

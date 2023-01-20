@@ -4,10 +4,11 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "camelCase")]
 pub struct LocationSearchResult {
     pub coordinates: LocationSearchCoordinates,
-    pub eva_nr: String,
+    pub eva_nr: Option<String>,
     pub location_id: String,
     pub location_type: String,
     pub name: String,
+    #[serde(default)]
     pub products: Vec<String>,
     pub weight: Option<i32>,
 }
