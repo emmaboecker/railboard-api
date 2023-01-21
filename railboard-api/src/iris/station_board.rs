@@ -34,7 +34,7 @@ pub struct IrisStationBoardQuery {
     get,
     path = "/iris/v1/station_board/{id}",
     params(
-        ("id" = String, Path, description = "The eva number or location id of the Station you are requesting"),
+        ("id" = String, Path, description = "The eva number of the Station you are requesting"),
         IrisStationBoardQuery
     ),
     tag = "Iris",
