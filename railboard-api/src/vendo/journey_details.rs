@@ -5,6 +5,7 @@ use axum::{
     Json,
 };
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use vendo_client::journey_details::{JourneyDetailsAttribute, JourneyDetailsHimNotice};
 
 use crate::{
@@ -15,10 +16,21 @@ use crate::{
 
 use super::VendoState;
 
+#[utoipa::path(
+    get,
+    path = "/vendo/v1/journey_details/{id}",
+    params(("id" = String, Path, description = "The Vendo-ID of the Journey you want to get details for")),
+    tag = "Vendo",
+    responses(
+        (status = 200, description = "The requested Journey Details", body = JourneyDetails),
+        (status = 400, description = "The Error returned by Vendo", body = RailboardApiError),
+        (status = 500, description = "The Error returned if the request or deserialization fails", body = RailboardApiError)
+    )
+)]
 pub async fn journey_details(
     Path(id): Path<String>,
     State(state): State<Arc<VendoState>>,
-) -> RailboardResult<Json<JoruneyDetails>> {
+) -> RailboardResult<Json<JourneyDetails>> {
     if let Some(cached) = state
         .cache
         .get_from_id(&format!("vendo.journey-details.{}", &id))
@@ -29,7 +41,7 @@ pub async fn journey_details(
 
     let response = state.vendo_client.journey_details(&id).await?;
 
-    let mapped = JoruneyDetails {
+    let mapped = JourneyDetails {
         short_name: response.short_name,
         name: response.name,
         long_name: response.long_name,
@@ -95,9 +107,9 @@ pub async fn journey_details(
     Ok(Json(mapped))
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct JoruneyDetails {
+pub struct JourneyDetails {
     pub short_name: String,
     pub name: String,
     pub long_name: String,
@@ -107,6 +119,7 @@ pub struct JoruneyDetails {
 
     pub stops: Vec<Stop>,
 
+    #[schema(nullable)]
     pub transport_number: Option<String>,
     pub product_type: String,
 
@@ -118,24 +131,30 @@ pub struct JoruneyDetails {
     pub journey_day: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct TrainSchedule {
     pub regular_schedule: String,
+    #[schema(nullable)]
     pub days_of_operation: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Stop {
     pub name: String,
+    #[schema(nullable)]
     pub arrival: Option<Time>,
+    #[schema(nullable)]
     pub departure: Option<Time>,
+    #[schema(nullable)]
     pub platform: Option<String>,
+    #[schema(nullable)]
     pub realtime_platform: Option<String>,
     pub notes: Vec<String>,
     pub him_notices: Vec<HimNotice>,
     pub attributes: Vec<Attribute>,
+    #[schema(nullable)]
     pub service_note: Option<Attribute>,
 }
 

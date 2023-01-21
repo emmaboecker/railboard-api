@@ -1,23 +1,29 @@
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Hash, Clone)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Hash, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Message {
     pub id: String,
     /// The time, in ten digit 'YYMMddHHmm' format, e.g. '1404011437' for 14:37 on April the 1st of 2014.
     pub timestamp: String,
+    #[schema(nullable)]
     /// The message code (e.G. `59` for "Schnee und Eis")
     pub code: Option<i32>,
+    #[schema(nullable)]
     pub category: Option<String>,
+    #[schema(nullable)]
     /// The time, in ten digit 'YYMMddHHmm' format, e.g. '1404011437' for 14:37 on April the 1st of 2014.
     pub valid_from: Option<String>,
+    #[schema(nullable)]
     /// The time, in ten digit 'YYMMddHHmm' format, e.g. '1404011437' for 14:37 on April the 1st of 2014.
     pub valid_to: Option<String>,
     pub message_status: MessageStatus,
+    #[schema(nullable)]
     pub priority: Option<MessagePriority>,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Clone)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Clone, ToSchema)]
 pub enum MessageStatus {
     /// A HIM message (generated through the Hafas Information Manager)
     HafasInformationManager,
@@ -37,7 +43,8 @@ pub enum MessageStatus {
     Connection,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Clone)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Clone, ToSchema)]
+#[serde(rename_all = "lowercase")]
 pub enum MessagePriority {
     High,
     Medium,

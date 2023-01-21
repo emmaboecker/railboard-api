@@ -18,6 +18,8 @@ chrono-tz = "0.8.1"
 async-lock = "2.6.0"
 thiserror = "1.0.38"
 
+utoipa = { version = "2.4.2", features = ["chrono"] }
+
 urlencoding = "2.1.2"
 
 [dev-dependencies]

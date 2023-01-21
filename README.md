@@ -16,7 +16,7 @@ In addition to the REST API endpoints that I am building, the clients for the di
 
 ## Documentation
 
-Documentation will come soon™
+Documentation is available at [https://api.rail.stckoverflw.net/docs](https://api.rail.stckoverflw.net/docs)
 
 ## Contribution 
 

@@ -4,24 +4,37 @@ use axum::{response::IntoResponse, Json};
 use iris_client::IrisOrRequestError;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
-use vendo_client::VendoOrRequestError;
 
-#[derive(Debug, Serialize, Deserialize)]
+use utoipa::ToSchema;
+use vendo_client::{VendoError, VendoOrRequestError};
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct RailboardApiError {
     pub domain: ErrorDomain,
     pub message: String,
-    pub error: Option<Value>,
+    #[schema(nullable)]
+    pub error: Option<UnderlyingApiError>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub enum ErrorDomain {
     #[serde(rename = "vendo")]
     Vendo,
+    #[serde(rename = "iris")]
+    Iris,
     #[serde(rename = "input")]
     Input,
     #[serde(rename = "request")]
     Request,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+#[serde(tag = "errorType")]
+pub enum UnderlyingApiError {
+    #[serde(rename = "vendo")]
+    Vendo(VendoError),
+    #[serde(rename = "iris")]
+    Iris,
 }
 
 pub type RailboardResult<T> = std::result::Result<T, RailboardApiError>;
@@ -30,6 +43,7 @@ impl IntoResponse for RailboardApiError {
     fn into_response(self) -> axum::response::Response {
         let code = match self.domain {
             ErrorDomain::Vendo => StatusCode::BAD_REQUEST,
+            ErrorDomain::Iris => StatusCode::BAD_REQUEST,
             ErrorDomain::Input => StatusCode::BAD_REQUEST,
             ErrorDomain::Request => StatusCode::INTERNAL_SERVER_ERROR,
         };
@@ -58,7 +72,7 @@ impl From<VendoOrRequestError> for RailboardApiError {
             VendoOrRequestError::VendoError(err) => RailboardApiError {
                 domain: ErrorDomain::Vendo,
                 message: format!("Failed to get from Vendo: {}", err),
-                error: Some(serde_json::to_value(err).unwrap()),
+                error: Some(UnderlyingApiError::Vendo(err)),
             },
         }
     }
@@ -75,7 +89,7 @@ impl From<IrisOrRequestError> for RailboardApiError {
             IrisOrRequestError::IrisError(err) => RailboardApiError {
                 domain: ErrorDomain::Vendo,
                 message: format!("Failed to get from Iris: {}", err),
-                error: Some(serde_json::to_value(err).unwrap()),
+                error: Some(UnderlyingApiError::Iris),
             },
             IrisOrRequestError::InvalidXML(err) => RailboardApiError {
                 domain: ErrorDomain::Vendo,

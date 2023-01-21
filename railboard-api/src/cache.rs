@@ -6,7 +6,7 @@ use serde::{de::DeserializeOwned, Serialize};
 use thiserror::Error;
 
 use crate::vendo::{
-    journey_details::JoruneyDetails, location_search::LocationSearchCache,
+    journey_details::JourneyDetails, location_search::LocationSearchCache,
     station_board::StationBoard,
 };
 
@@ -135,7 +135,7 @@ impl CachableObject for LocationSearchCache {
 }
 
 #[async_trait::async_trait]
-impl CachableObject for JoruneyDetails {
+impl CachableObject for JourneyDetails {
     async fn insert_to_cache<C: Cache>(&self, cache: &C) -> Result<(), CacheInsertError> {
         let key = format!("vendo.journey-details.{}", self.journey_id);
 

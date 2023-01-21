@@ -1,7 +1,4 @@
-use std::{
-    collections::{BTreeMap, HashMap},
-    sync::Arc,
-};
+use std::{collections::BTreeMap, sync::Arc};
 
 use axum::{
     extract::{Path, Query, State},
@@ -10,6 +7,7 @@ use axum::{
 use chrono::TimeZone;
 use chrono_tz::Europe::Berlin;
 use serde::{Deserialize, Serialize};
+use utoipa::{IntoParams, ToSchema};
 use vendo_client::station_board::{StationBoardArrivalsElement, StationBoardDeparturesElement};
 
 use crate::{
@@ -20,20 +18,32 @@ use crate::{
 
 use super::VendoState;
 
+#[derive(Deserialize, IntoParams)]
+pub struct StationBoardQuery {
+    /// The date (Unix Timestamp) to request the station board for. If not provided, the current date is used.
+    pub date: Option<i64>,
+}
+
+#[utoipa::path(
+    get,
+    path = "/vendo/v1/station_board/{id}",
+    params(
+        ("id" = String, Path, description = "The eva number or location id of the Station you are requesting"),
+        StationBoardQuery
+    ),
+    tag = "Vendo",
+    responses(
+        (status = 200, description = "The requested Station Board", body = StationBoard),
+        (status = 400, description = "The Error returned by Vendo", body = RailboardApiError),
+        (status = 500, description = "The Error returned if the request or deserialization fails", body = RailboardApiError)
+    )
+)]
 pub async fn station_board(
     Path(id): Path<String>,
-    Query(params): Query<HashMap<String, String>>,
+    Query(params): Query<StationBoardQuery>,
     State(state): State<Arc<VendoState>>,
 ) -> RailboardResult<Json<StationBoard>> {
-    let date = params.get("date");
-
-    let date = if let Some(date) = date {
-        Some(date.parse()?)
-    } else {
-        None
-    };
-
-    let date = if let Some(date) = date {
+    let date = if let Some(date) = params.date {
         Berlin.from_utc_datetime(&chrono::NaiveDateTime::from_timestamp_opt(date, 0).ok_or(
             RailboardApiError {
                 domain: ErrorDomain::Input,
@@ -163,7 +173,7 @@ pub async fn station_board(
     Ok(Json(station_board))
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct StationBoard {
     pub day: String,
@@ -172,28 +182,32 @@ pub struct StationBoard {
     pub station_board: Vec<StationBoardElement>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct StationBoardElement {
     pub journey_id: String,
+    #[schema(nullable)]
     pub arrival: Option<StationBoardArrival>,
+    #[schema(nullable)]
     pub departure: Option<StationBoardDeparture>,
     pub product_type: String,
     pub short_name: String,
     pub name: String,
+    #[schema(nullable)]
     pub scheduled_platform: Option<String>,
+    #[schema(nullable)]
     pub realtime_platform: Option<String>,
     pub notes: Vec<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct StationBoardArrival {
     origin: String,
     time: Time,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct StationBoardDeparture {
     destination: String,

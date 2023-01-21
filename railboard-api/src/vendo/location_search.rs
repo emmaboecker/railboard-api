@@ -14,6 +14,17 @@ use crate::{
 
 use super::VendoState;
 
+#[utoipa::path(
+    get,
+    path = "/vendo/v1/location_search/{query}",
+    params(("query" = String, Path, description = "The query you want to search for")),
+    tag = "Vendo",
+    responses(
+        (status = 200, description = "The requested Location Search Results", body = [LocationSearchResult]),
+        (status = 400, description = "The Error returned by Vendo", body = RailboardApiError),
+        (status = 500, description = "The Error returned if the request or deserialization fails", body = RailboardApiError)
+    )
+)]
 pub async fn location_search(
     Path(query): Path<String>,
     State(state): State<Arc<VendoState>>,

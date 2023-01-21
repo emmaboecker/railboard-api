@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, Debug, Error)]
+#[derive(Serialize, Deserialize, Debug, Error, ToSchema)]
 #[error("Vendo returned an error.")]
 pub struct VendoError {
     pub domain: String,

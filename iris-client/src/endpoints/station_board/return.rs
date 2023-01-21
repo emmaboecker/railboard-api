@@ -8,6 +8,7 @@ pub mod stop;
 
 pub use message::*;
 pub use stop::*;
+use utoipa::ToSchema;
 
 use crate::helpers::parse_iris_date;
 
@@ -15,7 +16,7 @@ use super::response::{EventStatus, TimetableStop};
 
 use wu_diff::*;
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct IrisStationBoard {
     pub station_name: String,

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
 use axum::{
     extract::{Path, Query, State},
@@ -10,6 +10,8 @@ use iris_client::{
     station_board::{from_iris_timetable, response::TimeTable, IrisStationBoard},
     IrisOrRequestError,
 };
+use serde::Deserialize;
+use utoipa::IntoParams;
 
 use crate::{
     cache::{CachableObject, Cache},
@@ -18,33 +20,41 @@ use crate::{
 
 use super::IrisState;
 
+#[derive(Deserialize, IntoParams)]
+pub struct IrisStationBoardQuery {
+    /// The date (Unix Timestamp) to request the station board for. If not provided, the current date is used.
+    pub date: Option<i64>,
+    /// The time to request data for in the past
+    pub lookbehind: Option<u32>,
+    /// The time to request data for in the future
+    pub lookahead: Option<u32>,
+}
+
+#[utoipa::path(
+    get,
+    path = "/iris/v1/station_board/{id}",
+    params(
+        ("id" = String, Path, description = "The eva number or location id of the Station you are requesting"),
+        IrisStationBoardQuery
+    ),
+    tag = "Iris",
+    responses(
+        (status = 200, description = "The requested Station Board", body = IrisStationBoard),
+        (status = 400, description = "The Error returned by Iris", body = RailboardApiError),
+        (status = 500, description = "The Error returned if the request or deserialization fails", body = RailboardApiError)
+    )
+)]
 pub async fn station_board(
     Path(id): Path<String>,
-    Query(params): Query<HashMap<String, String>>,
+    Query(params): Query<IrisStationBoardQuery>,
     State(state): State<Arc<IrisState>>,
 ) -> RailboardResult<Json<iris_client::station_board::IrisStationBoard>> {
     let iris_client = &state.iris_client.clone();
 
-    let date = params.get("date");
+    let lookbehind = params.lookbehind.unwrap_or(20);
+    let lookahead = params.lookahead.unwrap_or(180);
 
-    let date = if let Some(date) = date {
-        Some(date.parse().unwrap())
-    } else {
-        None
-    };
-
-    let lookbehind = params
-        .get("lookbehind")
-        .map(|s| s.parse::<i32>())
-        .unwrap_or(Ok(20))
-        .unwrap_or(20);
-    let lookahead = params
-        .get("lookahead")
-        .map(|s| s.parse::<i32>())
-        .unwrap_or(Ok(180))
-        .unwrap_or(180);
-
-    let date = if let Some(date) = date {
+    let date = if let Some(date) = params.date {
         Berlin.from_utc_datetime(&chrono::NaiveDateTime::from_timestamp_opt(date, 0).unwrap())
     } else {
         Berlin.from_utc_datetime(&chrono::Utc::now().naive_utc())
