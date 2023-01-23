@@ -69,7 +69,7 @@ impl IrisClient {
                     .iter()
                     .find(|realtime_stop| realtime_stop.id == stop.id);
                 stops.push(from_iris_timetable(
-                    &eva,
+                    eva,
                     &timetable.station_name,
                     stop,
                     realtime.map(|realtime| realtime.to_owned()),

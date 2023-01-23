@@ -96,7 +96,7 @@ pub async fn station_board(
                 .await;
             match timetable {
                 Ok(timetable) => {
-                    let timetable = timetable.clone();
+                    let timetable = timetable;
                     let cache_timetable = (
                         timetable.clone(),
                         id.clone(),
@@ -106,14 +106,12 @@ pub async fn station_board(
                     let state = state.clone();
                     tokio::spawn(async move {
                         cache_timetable
-                            .insert_to_cache(state.cache.as_ref().clone())
+                            .insert_to_cache(state.cache.clone().as_ref())
                             .await
                     });
-                    return Ok(timetable);
+                    Ok(timetable)
                 }
-                Err(err) => {
-                    return Err(err);
-                }
+                Err(err) => Err(err),
             }
         }))
     );
@@ -171,15 +169,12 @@ impl Iterator for DateRange {
     }
 }
 
-async fn get_realtime(
-    state: &Arc<IrisState>,
-    id: &String,
-) -> Result<TimeTable, IrisOrRequestError> {
+async fn get_realtime(state: &Arc<IrisState>, id: &str) -> Result<TimeTable, IrisOrRequestError> {
     if let Some(cached) = &state
         .cache
         .get_from_id::<iris_client::station_board::response::TimeTable>(&format!(
             "iris.station-board.realtime.{}",
-            id.clone()
+            id.to_owned()
         ))
         .await
     {
@@ -189,18 +184,16 @@ async fn get_realtime(
 
     match realtime {
         Ok(realtime) => {
-            let realtime = realtime.clone();
-            let cache_realtime = (realtime.clone(), id.clone());
+            let realtime = realtime;
+            let cache_realtime = (realtime.clone(), id.to_owned());
             let state = state.clone();
             tokio::spawn(async move {
                 cache_realtime
-                    .insert_to_cache(state.cache.as_ref().clone())
+                    .insert_to_cache(state.cache.clone().as_ref())
                     .await
             });
-            return Ok(realtime);
+            Ok(realtime)
         }
-        Err(err) => {
-            return Err(err);
-        }
+        Err(err) => Err(err),
     }
 }

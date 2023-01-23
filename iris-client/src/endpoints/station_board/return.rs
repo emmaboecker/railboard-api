@@ -53,40 +53,39 @@ pub fn from_iris_timetable(
 
     let event_status = realtime
         .as_ref()
-        .map(|stop| {
-            let departure_arrival = stop.departure.as_ref().or_else(|| stop.arrival.as_ref());
+        .and_then(|stop| {
+            let departure_arrival = stop.departure.as_ref().or(stop.arrival.as_ref());
 
             departure_arrival.map(|dep_arr| dep_arr.real_event_status.to_owned())
         })
         .flatten()
-        .flatten()
-        .or(stop
-            .departure
-            .as_ref()
-            .map(|f| f.planned_event_status.to_owned())
-            .flatten()
-            .or(stop
-                .arrival
+        .or_else(|| {
+            stop.departure
                 .as_ref()
-                .map(|f| f.planned_event_status.to_owned())
-                .flatten()));
+                .and_then(|f| f.planned_event_status.to_owned())
+                .or_else(|| {
+                    stop.arrival
+                        .as_ref()
+                        .and_then(|f| f.planned_event_status.to_owned())
+                })
+        });
 
     let hidden = realtime
         .as_ref()
-        .map(|stop| {
+        .and_then(|stop| {
             let departure_arrival = &stop
                 .departure
                 .as_ref()
-                .or_else(|| stop.departure.as_ref().or_else(|| stop.arrival.as_ref()));
+                .or_else(|| stop.departure.as_ref().or(stop.arrival.as_ref()));
 
             departure_arrival.map(|dep_arr| dep_arr.hidden == Some(1))
         })
-        .flatten()
-        .or(stop
-            .departure
-            .as_ref()
-            .map(|f| f.hidden == Some(1))
-            .or(stop.arrival.as_ref().map(|f| f.hidden == Some(1))));
+        .or_else(|| {
+            stop.departure
+                .as_ref()
+                .map(|f| f.hidden == Some(1))
+                .or_else(|| stop.arrival.as_ref().map(|f| f.hidden == Some(1)))
+        });
 
     let mut route = Vec::new();
 
@@ -97,18 +96,17 @@ pub fn from_iris_timetable(
     {
         let current_path: Option<Vec<&str>> = realtime
             .as_ref()
-            .map(|realtime| {
+            .and_then(|realtime| {
                 realtime
                     .arrival
                     .as_ref()
                     .map(|real_dep| real_dep.changed_path.as_ref())
             })
             .flatten()
-            .flatten()
-            .map(|path| path.split("|").collect());
+            .map(|path| path.split('|').collect());
 
         if let Some(current_path) = current_path {
-            let old = stops.split("|").collect::<Vec<&str>>();
+            let old = stops.split('|').collect::<Vec<&str>>();
 
             for diff in wu_diff::diff(&old, &current_path) {
                 match diff {
@@ -136,7 +134,7 @@ pub fn from_iris_timetable(
                 }
             }
         } else {
-            for stop in stops.split("|") {
+            for stop in stops.split('|') {
                 route.push(RouteStop {
                     name: stop.to_string(),
                     cancelled: false,
@@ -151,8 +149,8 @@ pub fn from_iris_timetable(
 
     route.push(RouteStop {
         name: String::from(station_name),
-        cancelled: cancelled,
-        added: added,
+        cancelled,
+        added,
     });
 
     if let Some(stops) = stop
@@ -162,18 +160,17 @@ pub fn from_iris_timetable(
     {
         let current_path: Option<Vec<&str>> = realtime
             .as_ref()
-            .map(|realtime| {
+            .and_then(|realtime| {
                 realtime
                     .departure
                     .as_ref()
                     .map(|real_dep| real_dep.changed_path.as_ref())
             })
             .flatten()
-            .flatten()
-            .map(|path| path.split("|").collect());
+            .map(|path| path.split('|').collect());
 
         if let Some(current_path) = current_path {
-            let old = stops.split("|").collect::<Vec<&str>>();
+            let old = stops.split('|').collect::<Vec<&str>>();
 
             for diff in wu_diff::diff(&old, &current_path) {
                 match diff {
@@ -201,7 +198,7 @@ pub fn from_iris_timetable(
                 }
             }
         } else {
-            for stop in stops.split("|") {
+            for stop in stops.split('|') {
                 route.push(RouteStop {
                     name: stop.to_string(),
                     cancelled: false,
@@ -220,19 +217,18 @@ pub fn from_iris_timetable(
         added: event_status == Some(EventStatus::Added),
         hidden: hidden.unwrap_or(false),
         arrival: stop.arrival.as_ref().map(|arrival| {
-            let plan_date = parse_iris_date(&arrival.planned_time.as_ref().unwrap()).unwrap();
+            let plan_date = parse_iris_date(arrival.planned_time.as_ref().unwrap()).unwrap();
             let plan_offset = plan_date.offset().fix();
             let real_date = realtime
                 .as_ref()
-                .map(|realtime| {
+                .and_then(|realtime| {
                     realtime
                         .arrival
                         .as_ref()
                         .map(|departure| departure.changed_time.as_ref())
                 })
                 .flatten()
-                .flatten()
-                .map(|time| parse_iris_date(&time).unwrap());
+                .map(|time| parse_iris_date(time).unwrap());
             let real_offset = real_date
                 .as_ref()
                 .map(|date| date.offset().fix())
@@ -245,7 +241,7 @@ pub fn from_iris_timetable(
                 wings: arrival
                     .wings
                     .as_ref()
-                    .map(|wings| wings.split("|").map(|string| string.to_string()).collect())
+                    .map(|wings| wings.split('|').map(|string| string.to_string()).collect())
                     .unwrap_or_default(),
                 origin: route.first().unwrap().name.to_owned(),
             }
@@ -255,15 +251,14 @@ pub fn from_iris_timetable(
             let plan_offset = plan_date.offset().fix();
             let real_date = realtime
                 .as_ref()
-                .map(|realtime| {
+                .and_then(|realtime| {
                     realtime
                         .departure
                         .as_ref()
                         .map(|departure| departure.changed_time.as_ref())
                 })
                 .flatten()
-                .flatten()
-                .map(|time| parse_iris_date(&time).unwrap());
+                .map(|time| parse_iris_date(time).unwrap());
             let real_offset = real_date
                 .as_ref()
                 .map(|date| date.offset().fix())
@@ -276,12 +271,12 @@ pub fn from_iris_timetable(
                 wings: departure
                     .wings
                     .as_ref()
-                    .map(|wings| wings.split("|").map(|string| string.to_string()).collect())
+                    .map(|wings| wings.split('|').map(|string| string.to_string()).collect())
                     .unwrap_or_default(),
                 direction: route.last().unwrap().name.to_owned(),
             }
         }),
-        route: route,
+        route,
         planned_platform: stop
             .departure
             .as_ref()
@@ -290,14 +285,13 @@ pub fn from_iris_timetable(
             .to_owned(),
         real_platform: realtime
             .as_ref()
-            .map(|realtime| {
+            .and_then(|realtime| {
                 realtime
                     .departure
                     .as_ref()
-                    .or_else(|| stop.arrival.as_ref())
+                    .or(stop.arrival.as_ref())
                     .map(|dep_arr| dep_arr.planned_platform.to_owned())
             })
-            .flatten()
             .flatten(),
         line_indicator: stop
             .departure
@@ -314,6 +308,6 @@ pub fn from_iris_timetable(
             .as_ref()
             .map(|trip_label| trip_label.train_number.to_owned())
             .unwrap()
-            .to_owned(),
+            ,
     }
 }
