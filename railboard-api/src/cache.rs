@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use iris_client::station_board::response::TimeTable;
 use redis::JsonAsyncCommands;
+use ris_client::journey_search::RisJourneySearchResponse;
 use serde::{de::DeserializeOwned, Serialize};
 use thiserror::Error;
 
@@ -158,5 +159,14 @@ impl CachableObject for (TimeTable, String) {
         let key = format!("iris.station-board.realtime.{}", self.1);
 
         cache.insert_to_cache(key, &self.0, 30).await
+    }
+}
+
+#[async_trait::async_trait]
+impl CachableObject for (String, String, RisJourneySearchResponse) {
+    async fn insert_to_cache<C: Cache>(&self, cache: &C) -> Result<(), CacheInsertError> {
+        let key = format!("ris.journey-search.{}.{}", self.0, self.1);
+
+        cache.insert_to_cache(key, &self.2.journeys, 120).await
     }
 }

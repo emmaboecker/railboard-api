@@ -6,11 +6,11 @@ use ris_client::RisClient;
 pub async fn journey_search() {
     dotenv().ok();
 
-    let api_key = std::env::var("DB_API_KEY").expect("DB_API_KEY not set");
-    let client_id = std::env::var("DB_CLIENT_ID").expect("DB_CLIENT_ID not set");
+    let api_key = std::env::var("RIS_API_KEY").expect("RIS_API_KEY not set");
+    let client_id = std::env::var("RIS_CLIENT_ID").expect("RIS_CLIENT_ID not set");
 
     let iris_client = IrisClient::default();
-    let ris_client = RisClient::new(None, None, None, client_id, api_key);
+    let ris_client = RisClient::new(None, None, None, &client_id, &api_key);
 
     let iris = iris_client
         .station_board("8000105", None, None, None)

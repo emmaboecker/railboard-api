@@ -21,7 +21,7 @@ use super::VendoState;
     tag = "Vendo",
     responses(
         (status = 200, description = "The requested Location Search Results", body = [LocationSearchResult]),
-        (status = 400, description = "The Error returned by Vendo", body = RailboardApiError),
+        (status = 400, description = "The Error returned by Vendo, will be the Vendo Domain with UnderlyingApiError Variant 1", body = RailboardApiError),
         (status = 500, description = "The Error returned if the request or deserialization fails", body = RailboardApiError)
     )
 )]

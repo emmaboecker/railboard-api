@@ -19,15 +19,15 @@ impl RisClient {
         client: Option<reqwest::Client>,
         base_url: Option<String>,
         concurrent_requests: Option<usize>,
-        db_client_id: String,
-        db_api_key: String,
+        db_client_id: &str,
+        db_api_key: &str,
     ) -> Self {
         Self {
             client: client.unwrap_or_else(reqwest::Client::new),
             base_url: base_url.unwrap_or_else(|| String::from("https://apis.deutschebahn.com")),
             semaphore: Semaphore::new(concurrent_requests.unwrap_or(100)),
-            db_client_id,
-            db_api_key,
+            db_client_id: db_client_id.to_string(),
+            db_api_key: db_api_key.to_string(),
         }
     }
 }

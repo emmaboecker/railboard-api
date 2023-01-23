@@ -3,6 +3,7 @@ use std::num::ParseIntError;
 use axum::{response::IntoResponse, Json};
 use iris_client::IrisOrRequestError;
 use reqwest::StatusCode;
+use ris_client::{RisError, RisOrRequestError, RisUnauthorizedError};
 use serde::{Deserialize, Serialize};
 
 use utoipa::ToSchema;
@@ -17,14 +18,12 @@ pub struct RailboardApiError {
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
+#[serde(rename = "lowercase")]
 pub enum ErrorDomain {
-    #[serde(rename = "vendo")]
     Vendo,
-    #[serde(rename = "iris")]
     Iris,
-    #[serde(rename = "input")]
+    Ris,
     Input,
-    #[serde(rename = "request")]
     Request,
 }
 
@@ -35,6 +34,10 @@ pub enum UnderlyingApiError {
     Vendo(VendoError),
     #[serde(rename = "iris")]
     Iris,
+    #[serde(rename = "ris-error")]
+    RisError(RisError),
+    #[serde(rename = "ris-unauthorized")]
+    RisUnauthorizedError(RisUnauthorizedError),
 }
 
 pub type RailboardResult<T> = std::result::Result<T, RailboardApiError>;
@@ -44,6 +47,7 @@ impl IntoResponse for RailboardApiError {
         let code = match self.domain {
             ErrorDomain::Vendo => StatusCode::BAD_REQUEST,
             ErrorDomain::Iris => StatusCode::BAD_REQUEST,
+            ErrorDomain::Ris => StatusCode::BAD_REQUEST,
             ErrorDomain::Input => StatusCode::BAD_REQUEST,
             ErrorDomain::Request => StatusCode::INTERNAL_SERVER_ERROR,
         };
@@ -93,8 +97,30 @@ impl From<IrisOrRequestError> for RailboardApiError {
             },
             IrisOrRequestError::InvalidXML(err) => RailboardApiError {
                 domain: ErrorDomain::Vendo,
-                message: format!("Failed to get from Iris: {}", err),
+                message: format!("Got invalid/unrecognized xml from Iris: {}", err),
                 error: None,
+            },
+        }
+    }
+}
+
+impl From<RisOrRequestError> for RailboardApiError {
+    fn from(value: RisOrRequestError) -> Self {
+        match value {
+            RisOrRequestError::FailedRequest(err) => RailboardApiError {
+                domain: ErrorDomain::Request,
+                message: format!("Failed to get from Ris: {}", err),
+                error: None,
+            },
+            RisOrRequestError::RisError(err) => RailboardApiError {
+                domain: ErrorDomain::Ris,
+                message: format!("Failed to get from Ris: {}", err),
+                error: Some(UnderlyingApiError::RisError(err)),
+            },
+            RisOrRequestError::RisUnauthorizedError(err) => RailboardApiError {
+                domain: ErrorDomain::Ris,
+                message: format!("The underlying request to ris was unauthorized: {}", err),
+                error: Some(UnderlyingApiError::RisUnauthorizedError(err)),
             },
         }
     }

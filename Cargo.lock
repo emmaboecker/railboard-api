@@ -1058,6 +1058,7 @@ dependencies = [
  "iris-client",
  "redis",
  "reqwest",
+ "ris-client",
  "serde",
  "serde_json",
  "thiserror",

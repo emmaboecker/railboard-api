@@ -12,6 +12,7 @@ pub mod error;
 pub mod types;
 
 pub mod iris;
+pub mod ris; 
 pub mod vendo;
 
 #[derive(OpenApi)]
@@ -20,7 +21,8 @@ pub mod vendo;
         vendo::station_board::station_board,
         vendo::location_search::location_search, 
         vendo::journey_details::journey_details,
-        iris::station_board::station_board
+        iris::station_board::station_board,
+        ris::journey_search::journey_search,
     ),
     components(schemas(
         error::RailboardApiError,
@@ -50,10 +52,17 @@ pub mod vendo;
         iris_client::station_board::message::Message,
         iris_client::station_board::message::MessageStatus,
         iris_client::station_board::message::MessagePriority,
+        // Ris stuff
+        ris_client::RisError,
+        ris_client::RisUnauthorizedError,
+        ris_client::journey_search::RisJourneySearchElement,
+        ris_client::journey_search::RisJourneySearchSchedule,
+        ris_client::journey_search::RisJourneySearchTransport,
     )),
     tags(
         (name = "Vendo", description = "API built on top of the Vendo API"),
         (name = "Iris", description = "API built on top of the Iris API"),
+        (name = "Ris", description = "API built on top of the Ris API"),
     )
 )]
 struct ApiDoc;
@@ -84,10 +93,14 @@ async fn main() {
 
     let redis_client = Arc::new(redis_client);
 
+    let ris_api_key = std::env::var("RIS_API_KEY").expect("RIS_API_KEY env variable is not set");
+    let ris_client_id = std::env::var("RIS_CLIENT_ID").expect("RIS_CLIENT_ID env variable is not set");
+
     let app = Router::new()
         .merge(SwaggerUi::new("/docs").url("/openapi.json", ApiDoc::openapi()))
         .nest("/vendo/v1", vendo::router(redis_client.clone()))
         .nest("/iris/v1", iris::router(redis_client.clone()))
+        .nest("/ris/v1", ris::router(redis_client.clone(), &ris_client_id, &ris_api_key))
         .fallback(|| async { "Nothing here :/" });
     let server = Server::bind(&"0.0.0.0:8080".parse().unwrap()).serve(app.into_make_service());
     tracing::info!("Listening on http://localhost:8080/");

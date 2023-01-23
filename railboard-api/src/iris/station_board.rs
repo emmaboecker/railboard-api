@@ -40,7 +40,7 @@ pub struct IrisStationBoardQuery {
     tag = "Iris",
     responses(
         (status = 200, description = "The requested Station Board", body = IrisStationBoard),
-        (status = 400, description = "The Error returned by Iris", body = RailboardApiError),
+        (status = 400, description = "The Error returned by Iris, will be the Iris Domain with UnderlyingApiError Variant 2, which has no Information because Iris doesn't return errors", body = RailboardApiError),
         (status = 500, description = "The Error returned if the request or deserialization fails", body = RailboardApiError)
     )
 )]
