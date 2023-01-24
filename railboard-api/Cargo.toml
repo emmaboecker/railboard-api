@@ -37,7 +37,7 @@ async-trait = "0.1.62"
 dotenvy = "0.15.6"
 
 # Caching
-redis = { version = "0.22.2", features = [
+redis = { version = "0.22.3", features = [
     "tokio-comp",
     "json",
     "connection-manager",
