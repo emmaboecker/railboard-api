@@ -13,5 +13,8 @@ jobs:
           toolchain: stable
       - uses: Swatinem/rust-cache@v2
       - uses: actions-rs/cargo@v1
+        env:
+          RIS_API_KEY: ${{ secrets.RIS_API_KEY }}
+          RIS_CLIENT_ID: ${{ secrets.RIS_CLIENT_ID }}
         with:
           command: test
