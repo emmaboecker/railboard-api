@@ -58,9 +58,9 @@ pub async fn journey_details(
                     scheduled: arrival,
                     realtime: stop.realtime_arrival,
                 }),
-                departure: stop.departure.map(|arrival| Time {
-                    scheduled: arrival,
-                    realtime: stop.realtime_arrival,
+                departure: stop.departure.map(|departure| Time {
+                    scheduled: departure,
+                    realtime: stop.realtime_departure,
                 }),
                 platform: stop.platform,
                 realtime_platform: stop.realtime_platform,
