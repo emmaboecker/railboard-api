@@ -1,5 +1,6 @@
 use chrono::{DateTime, FixedOffset};
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Hash)]
 #[serde(rename_all = "camelCase")]
@@ -10,6 +11,8 @@ pub struct JourneyDetailsResponse {
     pub destination_schedule: JourneyDetailsStation,
     pub r#type: String,
     pub journey_canceled: bool,
+    #[serde(default)]
+    pub events: Vec<JourneyDetailsEvent>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Hash)]
@@ -20,17 +23,19 @@ pub struct JourneyDetailsStation {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Hash)]
+#[serde(rename_all = "camelCase")]
 pub struct JourneyDetailsEvent {
     pub station: JourneyDetailsStation,
     pub passenger_change: bool,
     pub on_demand: bool,
     pub time_schedule: DateTime<FixedOffset>,
     pub time_type: String,
-    pub time: DateTime<FixedOffset>,
+    pub time: Option<DateTime<FixedOffset>>,
     pub platform_schedule: Option<String>,
     pub platform: Option<String>,
     pub messages: Vec<JourneyDetailsMessage>,
     pub r#type: EventType,
+    #[serde(rename = "arrivalOrDepartureID")]
     pub arrival_or_departure_id: String,
     pub additional: bool,
     pub canceled: bool,
@@ -45,7 +50,8 @@ pub enum EventType {
     Departure,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Hash, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct JourneyDetailsMessage {
     pub code: Option<String>,
     pub r#type: String,
@@ -56,6 +62,7 @@ pub struct JourneyDetailsMessage {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Hash)]
+#[serde(rename_all = "camelCase")]
 pub struct Administration {
     #[serde(rename = "administrationID")]
     pub administration_id: String,
@@ -64,6 +71,7 @@ pub struct Administration {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Hash)]
+#[serde(rename_all = "camelCase")]
 pub struct Transport {
     pub r#type: String,
     pub category: String,

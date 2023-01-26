@@ -27,7 +27,7 @@ If you want to also get journey details you should also use the Vendo API (for n
 ## Roadmap
 - [x] Major Vendo endpoints
 - [x] Iris Station-Board
-- [ ] Ris API endpoints
+- [x] Ris API endpoints
 - [ ] Coach Sequence API
 - [ ] Hafas API endpoints
 - [ ] Custom endpoints with data from multiple sources

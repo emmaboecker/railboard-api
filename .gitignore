@@ -1,6 +1,8 @@
 /target
 .env
 
+out
+
 # when I print something long to stdout I pipe it into a file
 output.txt
 

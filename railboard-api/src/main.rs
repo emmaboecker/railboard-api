@@ -23,6 +23,7 @@ pub mod vendo;
         vendo::journey_details::journey_details,
         iris::station_board::station_board,
         ris::journey_search::journey_search,
+        ris::journey_details::journey_details,
     ),
     components(schemas(
         error::RailboardApiError,
@@ -58,11 +59,17 @@ pub mod vendo;
         ris_client::journey_search::RisJourneySearchElement,
         ris_client::journey_search::RisJourneySearchSchedule,
         ris_client::journey_search::RisJourneySearchTransport,
+        ris::journey_details::RisJourneyDetails,
+        ris::journey_details::RisJourneyStop,
+        ris_client::journey_details::JourneyDetailsMessage,
+        ris::journey_details::JourneyStopTime,
+        ris::journey_details::JourneyStopAdministration,
+        
     )),
     tags(
-        (name = "Vendo", description = "API built on top of the Vendo API"),
-        (name = "Iris", description = "API built on top of the Iris API"),
-        (name = "Ris", description = "API built on top of the Ris API"),
+        (name = "Vendo", description = "API using the Vendo API as Backend"),
+        (name = "Iris", description = "API using the Iris API as Backend"),
+        (name = "Ris Journeys", description = "API using the Ris Journeys API as Backend"),
     )
 )]
 struct ApiDoc;
@@ -102,7 +109,10 @@ async fn main() {
         .nest("/iris/v1", iris::router(redis_client.clone()))
         .nest("/ris/v1", ris::router(redis_client.clone(), &ris_client_id, &ris_api_key))
         .fallback(|| async { "Nothing here :/" });
-    let server = Server::bind(&"0.0.0.0:8080".parse().unwrap()).serve(app.into_make_service());
-    tracing::info!("Listening on http://localhost:8080/");
+    
+    let bind_addr = std::env::var("API_URL").unwrap_or_else(|_| String::from("0.0.0.0:8080"));
+
+    let server = Server::bind(&bind_addr.parse().unwrap()).serve(app.into_make_service());
+    tracing::info!("Listening on {}", bind_addr);
     server.await.unwrap();
 }

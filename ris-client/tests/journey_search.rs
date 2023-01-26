@@ -24,7 +24,7 @@ pub async fn journey_search() {
         .expect("Didn't find a RE train");
 
     let ris_re_train = ris_client
-        .journey_search(&re_train.train_type, &re_train.train_number)
+        .journey_search(&re_train.train_type, &re_train.train_number, None)
         .await
         .expect("Failed to get journey search from ris");
 

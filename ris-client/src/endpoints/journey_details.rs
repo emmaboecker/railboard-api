@@ -16,7 +16,7 @@ impl RisClient {
             self.base_url, id,
         );
 
-        let response: RisJourneyDetailsOrErrorResponse = self
+        let response: JourneyDetailsResponse = self
             .client
             .get(&url)
             .header("db-api-key", self.db_api_key.clone())
@@ -26,15 +26,17 @@ impl RisClient {
             .json()
             .await?;
 
-        match response {
-            RisJourneyDetailsOrErrorResponse::Response(response) => Ok(*response),
-            RisJourneyDetailsOrErrorResponse::Error(error) => {
-                Err(RisOrRequestError::RisError(error))
-            }
-            RisJourneyDetailsOrErrorResponse::UnauthorizedError(error) => {
-                Err(RisOrRequestError::RisUnauthorizedError(error))
-            }
-        }
+        Ok(response)
+
+        // match response {
+        //     RisJourneyDetailsOrErrorResponse::Response(response) => Ok(*response),
+        //     RisJourneyDetailsOrErrorResponse::Error(error) => {
+        //         Err(RisOrRequestError::RisError(error))
+        //     }
+        //     RisJourneyDetailsOrErrorResponse::UnauthorizedError(error) => {
+        //         Err(RisOrRequestError::RisUnauthorizedError(error))
+        //     }
+        // }
     }
 }
 

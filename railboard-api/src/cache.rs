@@ -1,14 +1,19 @@
 use std::sync::Arc;
 
+use chrono::TimeZone;
+use chrono_tz::Europe::Berlin;
 use iris_client::station_board::response::TimeTable;
 use redis::JsonAsyncCommands;
 use ris_client::journey_search::RisJourneySearchResponse;
 use serde::{de::DeserializeOwned, Serialize};
 use thiserror::Error;
 
-use crate::vendo::{
-    journey_details::JourneyDetails, location_search::LocationSearchCache,
-    station_board::StationBoard,
+use crate::{
+    ris::journey_details::RisJourneyDetails,
+    vendo::{
+        journey_details::JourneyDetails, location_search::LocationSearchCache,
+        station_board::StationBoard,
+    },
 };
 
 #[async_trait::async_trait]
@@ -165,8 +170,29 @@ impl CachableObject for (TimeTable, String) {
 #[async_trait::async_trait]
 impl CachableObject for (String, String, RisJourneySearchResponse) {
     async fn insert_to_cache<C: Cache>(&self, cache: &C) -> Result<(), CacheInsertError> {
-        let key = format!("ris.journey-search.{}.{}", self.0, self.1);
+        let key = format!(
+            "ris.journey-search.{}.{}.{}",
+            self.0,
+            self.1,
+            self.2
+                .journeys
+                .first()
+                .map(|first| first.date.clone())
+                .unwrap_or_else(|| Berlin
+                    .from_utc_datetime(&chrono::Utc::now().naive_utc())
+                    .format("%Y-%m-%d")
+                    .to_string())
+        );
 
-        cache.insert_to_cache(key, &self.2.journeys, 120).await
+        cache.insert_to_cache(key, &self.2.journeys, 600).await
+    }
+}
+
+#[async_trait::async_trait]
+impl CachableObject for RisJourneyDetails {
+    async fn insert_to_cache<C: Cache>(&self, cache: &C) -> Result<(), CacheInsertError> {
+        let key = format!("ris.journey-details.{}", self.id);
+
+        cache.insert_to_cache(key, &self, 90).await
     }
 }
