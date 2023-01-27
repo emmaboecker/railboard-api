@@ -4,6 +4,22 @@ use dotenvy::dotenv;
 use ris_client::RisClient;
 
 #[tokio::test]
+async fn station_board() {
+    dotenv().ok();
+
+    let api_key = std::env::var("RIS_API_KEY").expect("RIS_API_KEY not set");
+    let client_id = std::env::var("RIS_CLIENT_ID").expect("RIS_CLIENT_ID not set");
+
+    let ris_client = RisClient::new(None, None, None, &client_id, &api_key);
+
+    let result = ris_client
+        .station_board_departures("8000105", None, None)
+        .await;
+
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
 async fn station_board_time_range() {
     dotenv().ok();
 
