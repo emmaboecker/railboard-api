@@ -11,7 +11,7 @@ async fn date_parsing() {
 
     let parsed_date = parsed_date.unwrap();
 
-    println!("{:?}", parsed_date);
+    println!("{parsed_date}");
 
     assert_eq!(parsed_date.year(), 2014);
     assert_eq!(parsed_date.month(), 4);

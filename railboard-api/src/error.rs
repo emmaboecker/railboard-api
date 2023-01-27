@@ -3,7 +3,7 @@ use std::num::ParseIntError;
 use axum::{response::IntoResponse, Json};
 use iris_client::IrisOrRequestError;
 use reqwest::StatusCode;
-use ris_client::{RisError, RisOrRequestError, RisUnauthorizedError};
+use ris_client::{RisError, RisOrRequestError, RisUnauthorizedError, ZugportalError};
 use serde::{Deserialize, Serialize};
 
 use utoipa::ToSchema;
@@ -38,6 +38,8 @@ pub enum UnderlyingApiError {
     RisError(RisError),
     #[serde(rename = "ris-unauthorized")]
     RisUnauthorizedError(RisUnauthorizedError),
+    #[serde(rename = "zugportal-error")]
+    ZugportalError(ZugportalError),
 }
 
 pub type RailboardResult<T> = std::result::Result<T, RailboardApiError>;
@@ -59,7 +61,7 @@ impl From<ParseIntError> for RailboardApiError {
     fn from(value: ParseIntError) -> Self {
         RailboardApiError {
             domain: ErrorDomain::Input,
-            message: format!("Required Integer but found: {}", value),
+            message: format!("Required Integer but found: {value}"),
             error: None,
         }
     }
@@ -70,12 +72,12 @@ impl From<VendoOrRequestError> for RailboardApiError {
         match value {
             VendoOrRequestError::FailedRequest(err) => RailboardApiError {
                 domain: ErrorDomain::Request,
-                message: format!("Failed to get from Vendo: {}", err),
+                message: format!("Failed to get from Vendo: {err}"),
                 error: None,
             },
             VendoOrRequestError::VendoError(err) => RailboardApiError {
                 domain: ErrorDomain::Vendo,
-                message: format!("Failed to get from Vendo: {}", err),
+                message: format!("Failed to get from Vendo: {err}"),
                 error: Some(UnderlyingApiError::Vendo(err)),
             },
         }
@@ -87,17 +89,17 @@ impl From<IrisOrRequestError> for RailboardApiError {
         match value {
             IrisOrRequestError::FailedRequest(err) => RailboardApiError {
                 domain: ErrorDomain::Request,
-                message: format!("Failed to get from Iris: {}", err),
+                message: format!("Failed to get from Iris: {err}"),
                 error: None,
             },
             IrisOrRequestError::IrisError(err) => RailboardApiError {
                 domain: ErrorDomain::Vendo,
-                message: format!("Failed to get from Iris: {}", err),
+                message: format!("Failed to get from Iris: {err}"),
                 error: Some(UnderlyingApiError::Iris),
             },
             IrisOrRequestError::InvalidXML(err) => RailboardApiError {
                 domain: ErrorDomain::Vendo,
-                message: format!("Got invalid/unrecognized xml from Iris: {}", err),
+                message: format!("Got invalid/unrecognized xml from Iris: {err}"),
                 error: None,
             },
         }
@@ -109,18 +111,23 @@ impl From<RisOrRequestError> for RailboardApiError {
         match value {
             RisOrRequestError::FailedRequest(err) => RailboardApiError {
                 domain: ErrorDomain::Request,
-                message: format!("Failed to get from Ris: {}", err),
+                message: format!("Failed to get from Ris: {err}"),
                 error: None,
             },
             RisOrRequestError::RisError(err) => RailboardApiError {
                 domain: ErrorDomain::Ris,
-                message: format!("Failed to get from Ris: {}", err),
+                message: format!("Failed to get from Ris: {err}"),
                 error: Some(UnderlyingApiError::RisError(err)),
             },
             RisOrRequestError::RisUnauthorizedError(err) => RailboardApiError {
                 domain: ErrorDomain::Ris,
-                message: format!("The underlying request to ris was unauthorized: {}", err),
+                message: format!("The underlying request to ris was unauthorized: {err}"),
                 error: Some(UnderlyingApiError::RisUnauthorizedError(err)),
+            },
+            RisOrRequestError::ZugportalError(err) => RailboardApiError {
+                domain: ErrorDomain::Ris,
+                message: format!("Failed to get from Ris (through Zugportal): {err}"),
+                error: Some(UnderlyingApiError::ZugportalError(err)),
             },
         }
     }

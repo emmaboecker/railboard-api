@@ -31,7 +31,7 @@ pub async fn location_search(
 ) -> RailboardResult<Json<Vec<LocationSearchResult>>> {
     if let Some(cached) = state
         .cache
-        .get_from_id::<LocationSearchCache>(&format!("vendo.location-search.{}", query))
+        .get_from_id::<LocationSearchCache>(&format!("vendo.location-search.{query}"))
         .await
     {
         return Ok(Json(cached.results));
