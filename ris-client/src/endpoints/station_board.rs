@@ -48,9 +48,7 @@ async fn station_board(
     let mut query = vec![("expandTimeFrame", "TIME_START".to_owned())]; // todo: find out what this means because I have no idea
 
     if let Some(time_start) = time_start {
-        let time = time_start.to_rfc3339();
-        println!("{time}");
-        query.push(("timeStart", time))
+        query.push(("timeStart", time_start.to_rfc3339()))
     }
 
     if let Some(time_end) = time_end {

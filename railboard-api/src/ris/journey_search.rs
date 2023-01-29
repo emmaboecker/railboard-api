@@ -35,7 +35,7 @@ pub struct JounreySearchQuery {
         ("number" = String, Path, description = "The number of this Train (e.g. for ICE 2929 it would be 2929 and for RE 1 it could be 4570)"), 
         ("date" = Option<String>, Query, description = "The date this train is running and should be searched for (e.g. 2023-01-25)")
     ),
-    tag = "Ris Journeys",
+    tag = "Ris",
     responses(
         (status = 200, description = "The requested Journey Details", body = [RisJourneySearchElement]),
         (status = 400, description = "The Error returned by Ris, will be the Ris Domain with UnderlyingApiError Variant 3 or 4", body = RailboardApiError),

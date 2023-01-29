@@ -2,7 +2,7 @@ use chrono::{DateTime, FixedOffset};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, ToSchema)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, ToSchema, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct StationBoardResponse {
     pub is_arrival: bool,
@@ -13,7 +13,7 @@ pub struct StationBoardResponse {
     pub items: Vec<StationBoardItem>,
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, ToSchema)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, ToSchema, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct StationBoardItem {
     pub station: StationBoardItemStation,
@@ -25,13 +25,13 @@ pub struct StationBoardItem {
     pub time: DateTime<FixedOffset>,
     pub time_type: String,
     pub canceled: bool,
-    pub diff: u32,
+    pub diff: i32,
     pub origin: Option<StationBoardItemStation>,
     pub destination: Option<StationBoardItemStation>,
     pub administration: StationBoardItemAdministration,
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, ToSchema)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, ToSchema, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct StationBoardItemStation {
     pub eva_no: String,
@@ -39,7 +39,7 @@ pub struct StationBoardItemStation {
     pub canceled: bool,
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, ToSchema)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, ToSchema, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct StationBoardItemVehicle {
     pub journey_id: String,

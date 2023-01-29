@@ -26,6 +26,14 @@ pub struct StationBoardStop {
     pub train_number: String,
     pub line_indicator: String,
     pub route: Vec<RouteStop>,
+    #[schema(nullable)]
+    pub replaces: Option<ReplacedTrain>,
+}
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, ToSchema)]
+pub struct ReplacedTrain {
+    pub category: String,
+    pub number: String,
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, ToSchema)]

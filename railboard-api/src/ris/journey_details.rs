@@ -22,7 +22,7 @@ use super::RisState;
     params(
         ("id" = String, Path, description = "The id of this journey (can be optained e.G. through the journey search endpoint)")
     ),
-    tag = "Ris Journeys",
+    tag = "Ris",
     responses(
         (status = 200, description = "The requested Journey Details", body = JourneyDetails),
         (status = 400, description = "The Error returned by Ris, will be the Ris Domain with UnderlyingApiError Variant 3 or 4", body = RailboardApiError),

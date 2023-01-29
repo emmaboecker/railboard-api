@@ -15,6 +15,10 @@ pub mod iris;
 pub mod ris; 
 pub mod vendo;
 
+mod helpers; 
+
+pub use helpers::*;
+
 #[derive(OpenApi)]
 #[openapi(
     paths(
@@ -24,6 +28,7 @@ pub mod vendo;
         iris::station_board::station_board,
         ris::journey_search::journey_search,
         ris::journey_details::journey_details,
+        ris::station_board::station_board,
     ),
     components(schemas(
         error::RailboardApiError,
@@ -50,12 +55,14 @@ pub mod vendo;
         iris_client::station_board::StationBoardStopArrival,
         iris_client::station_board::StationBoardStopDeparture,
         iris_client::station_board::RouteStop,
+        iris_client::station_board::ReplacedTrain,
         iris_client::station_board::message::Message,
         iris_client::station_board::message::MessageStatus,
         iris_client::station_board::message::MessagePriority,
         // Ris stuff
         ris_client::RisError,
         ris_client::RisUnauthorizedError,
+        ris_client::ZugportalError,
         ris_client::journey_search::RisJourneySearchElement,
         ris_client::journey_search::RisJourneySearchSchedule,
         ris_client::journey_search::RisJourneySearchTransport,
@@ -64,12 +71,16 @@ pub mod vendo;
         ris_client::journey_details::JourneyDetailsMessage,
         ris::journey_details::JourneyStopTime,
         ris::journey_details::JourneyStopAdministration,
+        ris::station_board::RisStationBoard,
+        ris::station_board::RisStationBoardItem,
+        ris::station_board::RisStationBoardItemAdministration,
+        ris::station_board::DepartureArrival,
         
     )),
     tags(
         (name = "Vendo", description = "API using the Vendo API as Backend"),
         (name = "Iris", description = "API using the Iris API as Backend"),
-        (name = "Ris Journeys", description = "API using the Ris Journeys API as Backend"),
+        (name = "Ris", description = "API using the Ris API as Backend"),
     )
 )]
 struct ApiDoc;

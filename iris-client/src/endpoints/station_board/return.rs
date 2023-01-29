@@ -216,6 +216,12 @@ pub fn from_iris_timetable(
         cancelled: event_status == Some(EventStatus::Cancelled),
         added: event_status == Some(EventStatus::Added),
         hidden: hidden.unwrap_or(false),
+        replaces: realtime.as_ref().and_then(|realtime| {
+            realtime.reference.as_ref().map(|reference| ReplacedTrain {
+                category: reference.trip_label.category.to_owned(),
+                number: reference.trip_label.train_number.to_owned(),
+            })
+        }),
         arrival: stop.arrival.as_ref().map(|arrival| {
             let plan_date = parse_iris_date(arrival.planned_time.as_ref().unwrap()).unwrap();
             let plan_offset = plan_date.offset().fix();
@@ -307,7 +313,6 @@ pub fn from_iris_timetable(
             .trip_label
             .as_ref()
             .map(|trip_label| trip_label.train_number.to_owned())
-            .unwrap()
-            ,
+            .unwrap(),
     }
 }
