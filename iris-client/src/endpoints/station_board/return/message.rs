@@ -1,6 +1,10 @@
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
+use self::lookup::iris_message_lookup;
+
+mod lookup;
+
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Hash, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Message {
@@ -8,8 +12,10 @@ pub struct Message {
     /// The time, in ten digit 'YYMMddHHmm' format, e.g. '1404011437' for 14:37 on April the 1st of 2014.
     pub timestamp: String,
     #[schema(nullable)]
-    /// The message code (e.G. `59` for "Schnee und Eis")
+    /// The message code (e.G. `59` for `Schnee und Eis`)
     pub code: Option<i32>,
+    /// The matched text from the message code (e.G. `Schnee und Eis` when code is `95`)
+    pub matched_text: Option<String>,
     #[schema(nullable)]
     pub category: Option<String>,
     #[schema(nullable)]
@@ -58,6 +64,7 @@ impl From<crate::station_board::response::Message> for Message {
             id: value.id,
             timestamp: value.timestamp,
             code: value.code,
+            matched_text: value.code.as_ref().and_then(iris_message_lookup),
             category: value.category,
             valid_from: value.valid_from,
             valid_to: value.valid_to,

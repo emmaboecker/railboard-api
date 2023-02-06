@@ -78,9 +78,9 @@ pub use helpers::*;
         
     )),
     tags(
-        (name = "Vendo", description = "API using the Vendo API as Backend"),
         (name = "Iris", description = "API using the Iris API as Backend"),
         (name = "Ris", description = "API using the Ris API as Backend"),
+        (name = "Vendo", description = "API using the Vendo API as Backend"),
     )
 )]
 struct ApiDoc;

@@ -6,11 +6,15 @@ use axum::{
 };
 use chrono::{DateTime, FixedOffset, TimeZone};
 use chrono_tz::Europe::Berlin;
-use ris_client::station_board::StationBoardItem;
+use ris_client::{station_board::StationBoardItem, RisClient};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use crate::{error::RailboardResult, name_from_administation_code};
+use crate::{
+    cache::{self, CachableObject, Cache},
+    error::RailboardResult,
+    name_from_administation_code,
+};
 
 use super::RisState;
 
@@ -25,9 +29,9 @@ pub struct StationBoardQuery {
     get,
     path = "/ris/v1/station_board/{eva}",
     params(
-        ("eva" = String, Path, description = ""),
-        ("timeStart" = Option<String>, Query, description = ""), 
-        ("timeEnd" = Option<String>, Query, description = "")
+        ("eva" = String, Path, description = "The Eva Number of the Station you are requesting"),
+        ("timeStart" = Option<String>, Query, description = "The Start Time of the Time Range you are requesting"),
+        ("timeEnd" = Option<String>, Query, description = "The End Time of the Time Range you are requesting")
     ),
     tag = "Ris",
     responses(
@@ -49,13 +53,42 @@ pub async fn station_board(
         .time_end
         .map(|time_end| Berlin.from_utc_datetime(&time_end.naive_utc()));
 
+    let result = ris_station_board(
+        &eva,
+        time_start,
+        time_end,
+        state.ris_client.clone(),
+        state.cache.clone(),
+    )
+    .await?;
+
+    Ok(Json(result))
+}
+
+pub async fn ris_station_board(
+    eva: &str,
+    time_start: Option<DateTime<chrono_tz::Tz>>,
+    time_end: Option<DateTime<chrono_tz::Tz>>,
+    ris_client: Arc<RisClient>,
+    cache: Arc<cache::RedisCache>,
+) -> RailboardResult<RisStationBoard> {
+    if let (Some(time_start), Some(time_end)) = (time_start, time_end) {
+        if let Some(cached) = cache
+            .get_from_id(&format!(
+                "ris.station-board.{}.{}.{}",
+                eva,
+                time_start.format("%Y-%m-%dT%H:%M"),
+                time_end.format("%Y-%m-%dT%H:%M")
+            ))
+            .await
+        {
+            return Ok(cached);
+        }
+    }
+
     let (arrivals, departures) = tokio::join!(
-        state
-            .ris_client
-            .station_board_arrivals(&eva, time_start, time_end),
-        state
-            .ris_client
-            .station_board_departures(&eva, time_start, time_end)
+        ris_client.station_board_arrivals(eva, time_start, time_end),
+        ris_client.station_board_departures(eva, time_start, time_end)
     );
 
     let arrivals = arrivals?;
@@ -74,7 +107,7 @@ pub async fn station_board(
         trains.entry(id).or_insert_with(|| (None, None)).1 = Some(train);
     }
 
-    Ok(Json(RisStationBoard {
+    let station_board = RisStationBoard {
         eva: departures.eva_no,
         name: departures.station_name,
         time_start: departures.time_start,
@@ -160,10 +193,19 @@ pub async fn station_board(
                 }
             })
             .collect(),
-    }))
+    };
+
+    {
+        let station_board = station_board.clone();
+        tokio::spawn(async move {
+            let _ = station_board.insert_to_cache(cache.as_ref()).await;
+        });
+    }
+
+    Ok(station_board)
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, ToSchema)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, ToSchema, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RisStationBoard {
     pub eva: String,
@@ -173,7 +215,7 @@ pub struct RisStationBoard {
     pub items: Vec<RisStationBoardItem>,
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, ToSchema)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, ToSchema, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RisStationBoardItem {
     pub journey_id: String,
@@ -204,7 +246,7 @@ pub struct RisStationBoardItem {
     pub administation: RisStationBoardItemAdministration,
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, ToSchema)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, ToSchema, Clone)]
 pub struct RisStationBoardItemAdministration {
     pub id: String,
     pub operator_code: String,
@@ -212,7 +254,7 @@ pub struct RisStationBoardItemAdministration {
     pub ris_operator_name: String,
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, ToSchema)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, ToSchema, Clone)]
 pub struct DepartureArrival {
     /// Since ris returns dates with seconds it also rounds up this number if the seconds are 50 for example
     pub delay: i32,
