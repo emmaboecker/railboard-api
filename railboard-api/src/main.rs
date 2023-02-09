@@ -14,6 +14,7 @@ pub mod types;
 pub mod iris;
 pub mod ris; 
 pub mod vendo;
+pub mod custom; 
 
 mod helpers; 
 
@@ -29,6 +30,7 @@ pub use helpers::*;
         ris::journey_search::journey_search,
         ris::journey_details::journey_details,
         ris::station_board::station_board,
+        custom::station_board::station_board,
     ),
     components(schemas(
         error::RailboardApiError,
@@ -75,11 +77,18 @@ pub use helpers::*;
         ris::station_board::RisStationBoardItem,
         ris::station_board::RisStationBoardItemAdministration,
         ris::station_board::DepartureArrival,
+        // Custom stuff
+        custom::station_board::StationBoard,
+        custom::station_board::StationBoardItem,
+        custom::station_board::StationBoardItemAdministration,
+        custom::station_board::DepartureArrival,
+        custom::station_board::IrisInformation,
         
     )),
     tags(
         (name = "Iris", description = "API using the Iris API as Backend"),
         (name = "Ris", description = "API using the Ris API as Backend"),
+        (name = "Custom", description = "API not using a single API as Backend, but rather a combination of multiple sources"),
         (name = "Vendo", description = "API using the Vendo API as Backend"),
     )
 )]
@@ -119,6 +128,7 @@ async fn main() {
         .nest("/vendo/v1", vendo::router(redis_client.clone()))
         .nest("/iris/v1", iris::router(redis_client.clone()))
         .nest("/ris/v1", ris::router(redis_client.clone(), &ris_client_id, &ris_api_key))
+        .nest("/v1", custom::router(redis_client.clone(), &ris_client_id, &ris_api_key))
         .fallback(|| async { "Nothing here :/" });
     
     let bind_addr = std::env::var("API_URL").unwrap_or_else(|_| String::from("0.0.0.0:8080"));

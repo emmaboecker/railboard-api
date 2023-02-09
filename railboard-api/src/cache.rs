@@ -203,8 +203,8 @@ impl CachableObject for RisStationBoard {
         let key = format!(
             "ris.station-board.{}.{}.{}",
             self.eva,
-            self.time_start.format("%Y-%m-%dT%H:%M"),
-            self.time_end.format("%Y-%m-%dT%H:%M")
+            self.time_start.naive_utc().format("%Y-%m-%dT%H:%M"),
+            self.time_end.naive_utc().format("%Y-%m-%dT%H:%M")
         );
 
         cache.insert_to_cache(key, &self, 180).await

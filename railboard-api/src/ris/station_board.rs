@@ -77,8 +77,8 @@ pub async fn ris_station_board(
             .get_from_id(&format!(
                 "ris.station-board.{}.{}.{}",
                 eva,
-                time_start.format("%Y-%m-%dT%H:%M"),
-                time_end.format("%Y-%m-%dT%H:%M")
+                time_start.naive_utc().format("%Y-%m-%dT%H:%M"),
+                time_end.naive_utc().format("%Y-%m-%dT%H:%M")
             ))
             .await
         {
@@ -135,7 +135,7 @@ pub async fn ris_station_board(
                     station_eva: departure_arrival.station.eva_no.clone(),
                     station_name: departure_arrival.station.name.clone(),
                     cancelled: departure_arrival.canceled || departure_arrival.station.canceled,
-                    category: departure_arrival.category,
+                    category: departure_arrival.train.category,
                     train_type: departure_arrival.train.r#type,
                     train_number: departure_arrival.train.no,
                     line_indicator: departure_arrival.train.line_name,
@@ -247,6 +247,7 @@ pub struct RisStationBoardItem {
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, ToSchema, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct RisStationBoardItemAdministration {
     pub id: String,
     pub operator_code: String,
@@ -255,6 +256,7 @@ pub struct RisStationBoardItemAdministration {
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, ToSchema, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct DepartureArrival {
     /// Since ris returns dates with seconds it also rounds up this number if the seconds are 50 for example
     pub delay: i32,
