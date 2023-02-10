@@ -6,7 +6,7 @@ use axum::{
 };
 use chrono::{DateTime, FixedOffset, TimeZone, Utc};
 use chrono_tz::Europe::Berlin;
-use iris_client::station_board::RouteStop;
+use iris_client::station_board::{message::Message, RouteStop};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
@@ -155,6 +155,7 @@ pub async fn station_board(
                         .replaces
                         .map(|replaces| format!("{} {}", replaces.category, replaces.number)),
                     route: iris.route,
+                    messages: iris.messages,
                 }),
             }
         })
@@ -222,6 +223,7 @@ pub struct IrisInformation {
     #[schema(nullable)]
     pub replaces: Option<String>,
     pub route: Vec<RouteStop>,
+    pub messages: Vec<Message>,
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, ToSchema, Clone)]
