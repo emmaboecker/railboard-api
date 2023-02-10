@@ -1,5 +1,9 @@
+use chrono::NaiveDateTime;
+
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
+
+use crate::helpers::parse_iris_date;
 
 use self::lookup::iris_message_lookup;
 
@@ -9,8 +13,7 @@ mod lookup;
 #[serde(rename_all = "camelCase")]
 pub struct Message {
     pub id: String,
-    /// The time, in ten digit 'YYMMddHHmm' format, e.g. '1404011437' for 14:37 on April the 1st of 2014.
-    pub timestamp: String,
+    pub timestamp: NaiveDateTime,
     #[schema(nullable)]
     /// The message code (e.G. `59` for `Schnee und Eis`)
     pub code: Option<i32>,
@@ -19,11 +22,9 @@ pub struct Message {
     #[schema(nullable)]
     pub category: Option<String>,
     #[schema(nullable)]
-    /// The time, in ten digit 'YYMMddHHmm' format, e.g. '1404011437' for 14:37 on April the 1st of 2014.
-    pub valid_from: Option<String>,
+    pub valid_from: Option<NaiveDateTime>,
     #[schema(nullable)]
-    /// The time, in ten digit 'YYMMddHHmm' format, e.g. '1404011437' for 14:37 on April the 1st of 2014.
-    pub valid_to: Option<String>,
+    pub valid_to: Option<NaiveDateTime>,
     pub message_status: MessageStatus,
     #[schema(nullable)]
     pub priority: Option<MessagePriority>,
@@ -31,7 +32,7 @@ pub struct Message {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Clone, ToSchema)]
 pub enum MessageStatus {
-    /// A HIM message (generated through the Hafas Information Manager)
+    /// A HIM message (generated through the Hafas Information Manager)c
     HafasInformationManager,
     /// A message about a quality change
     QualityChange,
@@ -62,12 +63,18 @@ impl From<crate::station_board::response::Message> for Message {
     fn from(value: crate::station_board::response::Message) -> Self {
         Self {
             id: value.id,
-            timestamp: value.timestamp,
+            timestamp: parse_iris_date(&value.timestamp)
+                .map(|timestamp| timestamp.naive_local())
+                .unwrap(),
             code: value.code,
             matched_text: value.code.as_ref().and_then(iris_message_lookup),
             category: value.category,
-            valid_from: value.valid_from,
-            valid_to: value.valid_to,
+            valid_from: value.valid_from.and_then(|valid_from| {
+                parse_iris_date(&valid_from).map(|valid_from| valid_from.naive_local())
+            }),
+            valid_to: value.valid_to.and_then(|valid_to| {
+                parse_iris_date(&valid_to).map(|valid_to| valid_to.naive_local())
+            }),
             message_status: value.message_status.into(),
             priority: value.priority.map(|priority| priority.into()),
         }
