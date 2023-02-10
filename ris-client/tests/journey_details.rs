@@ -18,8 +18,9 @@ async fn journey_details() {
 
     let first = station_board
         .items
-        .first()
-        .expect("No Train in departure board of Frankfurt. Is it night?");
+        .into_iter()
+        .find(|item| item.train.category == "ICE")
+        .expect("No ICE in departure board of Frankfurt. Is it night?");
 
     let journey_details = ris_client
         .journey_details(&first.train.journey_id)
