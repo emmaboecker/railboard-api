@@ -18,7 +18,7 @@ chrono-tz = "0.8.1"
 async-lock = "2.6.0"
 thiserror = "1.0.38"
 
-utoipa = { version = "3.0.1", features = ["chrono"] }
+utoipa = { version = "3.0.2", features = ["chrono"] }
 
 urlencoding = "2.1.2"
 futures = "0.3.26"
