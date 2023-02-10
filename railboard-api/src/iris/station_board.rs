@@ -4,7 +4,7 @@ use axum::{
     extract::{Path, Query, State},
     Json,
 };
-use chrono::{DateTime, Duration, TimeZone, Timelike};
+use chrono::{DateTime, Duration, FixedOffset, TimeZone, Timelike};
 use chrono_tz::{Europe::Berlin, Tz};
 use iris_client::{
     station_board::{from_iris_timetable, response::TimeTable, IrisStationBoard},
@@ -22,8 +22,8 @@ use super::IrisState;
 
 #[derive(Deserialize, IntoParams)]
 pub struct IrisStationBoardQuery {
-    /// The date (Unix Timestamp) to request the station board for. If not provided, the current date is used.
-    pub date: Option<i64>,
+    /// The date to request the station board for. If not provided, the current date is used.
+    pub date: Option<DateTime<FixedOffset>>,
     /// The time to request data for in the past
     pub lookbehind: Option<u32>,
     /// The time to request data for in the future
@@ -53,7 +53,7 @@ pub async fn station_board(
     let lookahead = params.lookahead.unwrap_or(180);
 
     let date = if let Some(date) = params.date {
-        Berlin.from_utc_datetime(&chrono::NaiveDateTime::from_timestamp_opt(date, 0).unwrap())
+        Berlin.from_utc_datetime(&date.naive_utc())
     } else {
         Berlin.from_utc_datetime(&chrono::Utc::now().naive_utc())
     };
