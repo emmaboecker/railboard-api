@@ -118,13 +118,13 @@ pub fn from_iris_timetable(
                         });
                     }
                     DiffResult::Added(add) => {
-                        let new_stop = current_path[add.new_index.unwrap()].to_string();
+                        let new_stop = current_path[add.new_index.unwrap()];
                         if !new_stop.is_empty() {
                             route.push(RouteStop {
                                 name: new_stop.to_string(),
                                 cancelled: false,
                                 added: true,
-                            });    
+                            });
                         }
                     }
                     DiffResult::Removed(rem) => {
@@ -185,11 +185,14 @@ pub fn from_iris_timetable(
                         });
                     }
                     DiffResult::Added(add) => {
-                        route.push(RouteStop {
-                            name: current_path[add.new_index.unwrap()].to_string(),
-                            cancelled: false,
-                            added: true,
-                        });
+                        let new_stop = current_path[add.new_index.unwrap()];
+                        if !new_stop.is_empty() {
+                            route.push(RouteStop {
+                                name: new_stop.to_string(),
+                                cancelled: false,
+                                added: true,
+                            });
+                        }
                     }
                     DiffResult::Removed(rem) => {
                         route.push(RouteStop {

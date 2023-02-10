@@ -4,7 +4,7 @@ use axum::{
     extract::{Path, Query, State},
     Json,
 };
-use chrono::{DateTime, FixedOffset, TimeZone, Utc};
+use chrono::{DateTime, Datelike, FixedOffset, TimeZone, Utc};
 use chrono_tz::Europe::Berlin;
 use iris_client::station_board::{message::Message, RouteStop};
 use serde::{Deserialize, Serialize};
@@ -78,88 +78,169 @@ pub async fn station_board(
 
     let items = ris_station_board.items;
 
-    let items: Vec<StationBoardItem> = items
-        .into_iter()
-        .map(|item| {
-            let iris_item = iris_station_board.stops.iter().find(|iris_item| {
-                iris_item.train_number == item.train_number.to_string()
-                    && (iris_item
-                        .arrival
-                        .clone()
-                        .map(|arrival| arrival.planned_time)
-                        == item.arrival.clone().map(|arrival| arrival.time_scheduled)
-                        || iris_item
-                            .departure
-                            .clone()
-                            .map(|departure| departure.planned_time)
-                            == item
-                                .departure
+    let mut items: Vec<StationBoardItem> =
+        items
+            .into_iter()
+            .map(|item| {
+                let iris_item =
+                    iris_station_board.stops.iter().find(|iris_item| {
+                        iris_item.train_number == item.train_number.to_string()
+                            && iris_item.train_type == item.category
+                            && (iris_item
+                                .arrival
                                 .clone()
-                                .map(|departure| departure.time_scheduled))
-            });
+                                .map(|arrival| arrival.planned_time.naive_utc().date().day())
+                                == item
+                                    .arrival
+                                    .clone()
+                                    .map(|arrival| arrival.time_scheduled.naive_utc().date().day())
+                                || iris_item.departure.clone().map(|departure| {
+                                    departure.planned_time.naive_utc().date().day()
+                                }) == item.departure.clone().map(|departure| {
+                                    departure.time_scheduled.naive_utc().date().day()
+                                }))
+                    });
 
-            let iris_item = iris_item.cloned();
+                let iris_item = iris_item.cloned();
 
-            StationBoardItem {
-                journey_id: item.journey_id,
+                StationBoardItem {
+                    ris_id: Some(item.journey_id),
+                    iris_id: iris_item.as_ref().map(|iris| iris.id.clone()),
 
-                station_eva: item.station_eva,
-                station_name: item.station_name,
+                    station_eva: item.station_eva,
+                    station_name: item.station_name,
 
-                category: item.category,
-                train_type: item.train_type,
-                train_number: item.train_number,
-                line_indicator: item.line_indicator,
+                    category: item.category,
+                    train_type: item.train_type,
+                    train_number: item.train_number,
+                    line_indicator: item.line_indicator,
 
-                cancelled: item.cancelled,
+                    cancelled: item.cancelled,
 
-                arrival: item.arrival.map(|arrival| DepartureArrival {
-                    time_scheduled: arrival.time_scheduled,
-                    time_realtime: arrival.time_realtime,
-                    delay: arrival.delay,
-                    time_type: arrival.time_type,
-                    wings: iris_item
-                        .clone()
-                        .and_then(|iris| iris.arrival.map(|arrival| arrival.wings))
-                        .unwrap_or_default(),
+                    arrival: item.arrival.map(|arrival| DepartureArrival {
+                        time_scheduled: arrival.time_scheduled,
+                        time_realtime: arrival.time_realtime,
+                        time_type: Some(arrival.time_type),
+                        wings: iris_item
+                            .clone()
+                            .and_then(|iris| iris.arrival.map(|arrival| arrival.wings))
+                            .unwrap_or_default(),
+                    }),
+                    departure: item.departure.map(|departure| DepartureArrival {
+                        time_scheduled: departure.time_scheduled,
+                        time_realtime: departure.time_realtime,
+                        time_type: Some(departure.time_type),
+                        wings: iris_item
+                            .clone()
+                            .and_then(|iris| iris.departure.map(|departure| departure.wings))
+                            .unwrap_or_default(),
+                    }),
+
+                    platform_scheduled: item.platform_scheduled,
+                    platform_realtime: item.platform_realtime,
+
+                    origin_eva: Some(item.origin_eva),
+                    origin_name: item.origin_name,
+                    destination_eva: Some(item.destination_eva),
+                    destination_name: item.destination_name,
+
+                    administation: Some(StationBoardItemAdministration {
+                        id: item.administation.id,
+                        operator_code: item.administation.operator_code,
+                        operator_name: item.administation.operator_name,
+                        ris_operator_name: item.administation.ris_operator_name,
+                    }),
+
+                    additional_info: iris_item.map(|iris| IrisInformation {
+                        replaces: iris
+                            .replaces
+                            .map(|replaces| format!("{} {}", replaces.category, replaces.number)),
+                        route: iris.route,
+                        messages: iris.messages,
+                    }),
+                }
+            })
+            .collect();
+
+    for stop in iris_station_board.stops.into_iter().filter(|stop| {
+        stop.arrival
+            .as_ref()
+            .map(|arrival| {
+                arrival.planned_time.naive_utc() >= time_start.naive_utc()
+                    || arrival
+                        .real_time
+                        .map(|real_time| real_time.naive_utc() >= time_start.naive_utc())
+                        .unwrap_or(false)
+            })
+            .unwrap_or(true)
+            && stop
+                .departure
+                .as_ref()
+                .map(|departure| {
+                    departure.planned_time.naive_utc() <= time_end.naive_utc()
+                        || departure
+                            .real_time
+                            .map(|real_time| real_time.naive_utc() <= time_end.naive_utc())
+                            .unwrap_or(false)
+                })
+                .unwrap_or(true)
+    }) {
+        if !items
+            .iter()
+            .any(|item| item.iris_id == Some(stop.id.clone()))
+        {
+            items.push(StationBoardItem {
+                ris_id: None,
+                iris_id: Some(stop.id),
+                station_eva: stop.station_eva,
+                station_name: stop.station_name,
+                category: stop.train_type.clone(),
+                train_type: stop.train_type,
+                train_number: stop.train_number.parse().unwrap_or(0),
+                line_indicator: stop.line_indicator,
+                cancelled: stop.cancelled,
+                arrival: stop.arrival.map(|arrival| DepartureArrival {
+                    time_scheduled: arrival.planned_time,
+                    time_realtime: arrival.real_time.unwrap_or(arrival.planned_time),
+                    time_type: None,
+                    wings: arrival.wings,
                 }),
-                departure: item.departure.map(|departure| DepartureArrival {
-                    time_scheduled: departure.time_scheduled,
-                    time_realtime: departure.time_realtime,
-                    delay: departure.delay,
-                    time_type: departure.time_type,
-                    wings: iris_item
-                        .clone()
-                        .and_then(|iris| iris.departure.map(|departure| departure.wings))
-                        .unwrap_or_default(),
+                departure: stop.departure.map(|departure| DepartureArrival {
+                    time_scheduled: departure.planned_time,
+                    time_realtime: departure.real_time.unwrap_or(departure.planned_time),
+                    time_type: None,
+                    wings: departure.wings,
                 }),
-
-                platform_scheduled: item.platform_scheduled,
-                platform_realtime: item.platform_realtime,
-
-                origin_eva: item.origin_eva,
-                origin_name: item.origin_name,
-                destination_eva: item.destination_eva,
-                destination_name: item.destination_name,
-
-                administation: StationBoardItemAdministration {
-                    id: item.administation.id,
-                    operator_code: item.administation.operator_code,
-                    operator_name: item.administation.operator_name,
-                    ris_operator_name: item.administation.ris_operator_name,
-                },
-
-                additional_info: iris_item.map(|iris| IrisInformation {
-                    iris_id: iris.id,
-                    replaces: iris
+                platform_scheduled: stop.planned_platform,
+                platform_realtime: stop.real_platform,
+                origin_eva: None,
+                origin_name: stop.route.first().unwrap().name.clone(),
+                destination_eva: None,
+                destination_name: stop.route.last().unwrap().name.clone(),
+                administation: None,
+                additional_info: Some(IrisInformation {
+                    replaces: stop
                         .replaces
                         .map(|replaces| format!("{} {}", replaces.category, replaces.number)),
-                    route: iris.route,
-                    messages: iris.messages,
+                    route: stop.route,
+                    messages: stop.messages,
                 }),
-            }
-        })
-        .collect();
+            });
+        }
+    }
+
+    items.sort_by(|a, b| {
+        a.arrival
+            .as_ref()
+            .unwrap_or_else(|| a.departure.as_ref().unwrap())
+            .time_scheduled
+            .cmp(
+                &b.arrival
+                    .as_ref()
+                    .unwrap_or_else(|| b.departure.as_ref().unwrap())
+                    .time_scheduled,
+            )
+    });
 
     let station_board = StationBoard {
         eva: ris_station_board.eva,
@@ -185,7 +266,10 @@ pub struct StationBoard {
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, ToSchema, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct StationBoardItem {
-    pub journey_id: String,
+    #[schema(nullable)]
+    pub ris_id: Option<String>,
+    #[schema(nullable)]
+    pub iris_id: Option<String>,
 
     pub station_eva: String,
     pub station_name: String,
@@ -197,7 +281,9 @@ pub struct StationBoardItem {
 
     pub cancelled: bool,
 
+    #[schema(nullable)]
     pub arrival: Option<DepartureArrival>,
+    #[schema(nullable)]
     pub departure: Option<DepartureArrival>,
 
     #[schema(nullable)]
@@ -205,12 +291,15 @@ pub struct StationBoardItem {
     #[schema(nullable)]
     pub platform_realtime: Option<String>,
 
-    pub origin_eva: String,
+    #[schema(nullable)]
+    pub origin_eva: Option<String>,
     pub origin_name: String,
-    pub destination_eva: String,
+    #[schema(nullable)]
+    pub destination_eva: Option<String>,
     pub destination_name: String,
 
-    pub administation: StationBoardItemAdministration,
+    #[schema(nullable)]
+    pub administation: Option<StationBoardItemAdministration>,
 
     #[schema(nullable)]
     pub additional_info: Option<IrisInformation>,
@@ -219,7 +308,6 @@ pub struct StationBoardItem {
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, ToSchema, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct IrisInformation {
-    pub iris_id: String,
     #[schema(nullable)]
     pub replaces: Option<String>,
     pub route: Vec<RouteStop>,
@@ -238,11 +326,10 @@ pub struct StationBoardItemAdministration {
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, ToSchema, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct DepartureArrival {
-    /// Since ris returns dates with seconds it also rounds up this number if the seconds are 50 for example
-    pub delay: i32,
     pub time_scheduled: DateTime<FixedOffset>,
     pub time_realtime: DateTime<FixedOffset>,
-    pub time_type: String,
+    #[schema(nullable)]
+    pub time_type: Option<String>,
 
     pub wings: Vec<String>,
 }
