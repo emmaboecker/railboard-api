@@ -71,6 +71,7 @@ pub use helpers::*;
         ris::journey_details::RisJourneyDetails,
         ris::journey_details::RisJourneyStop,
         ris_client::journey_details::JourneyDetailsMessage,
+        ris_client::journey_details::Transport,
         ris::journey_details::JourneyStopTime,
         ris::journey_details::JourneyStopAdministration,
         ris::station_board::RisStationBoard,

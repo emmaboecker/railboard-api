@@ -5,7 +5,7 @@ use axum::{
     Json,
 };
 use chrono::{DateTime, FixedOffset};
-use ris_client::journey_details::{JourneyDetailsEvent, JourneyDetailsMessage};
+use ris_client::journey_details::{JourneyDetailsEvent, JourneyDetailsMessage, Transport};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
@@ -132,6 +132,7 @@ pub async fn journey_details(
                     realtime: departure.time,
                     time_type: departure.time_type,
                 }),
+                transport: departure_arrival.transport,
                 messages: messages.into_iter().collect(),
                 on_demand: departure_arrival.on_demand,
                 cancelled: departure_arrival.canceled,
@@ -190,6 +191,7 @@ pub struct RisJourneyStop {
     #[schema(nullable)]
     pub departure: Option<JourneyStopTime>,
     pub messages: Vec<JourneyDetailsMessage>,
+    pub transport: Transport,
     pub on_demand: bool,
     pub cancelled: bool,
     pub additional: bool,

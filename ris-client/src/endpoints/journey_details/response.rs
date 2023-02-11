@@ -70,7 +70,7 @@ pub struct Administration {
     pub operator_name: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Hash, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Transport {
     pub r#type: String,
