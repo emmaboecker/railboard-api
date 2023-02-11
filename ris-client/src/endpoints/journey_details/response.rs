@@ -34,6 +34,7 @@ pub struct JourneyDetailsEvent {
     pub platform_schedule: Option<String>,
     pub platform: Option<String>,
     pub messages: Vec<JourneyDetailsMessage>,
+    pub disruptions: Vec<JourneyDetailsDisruption>,
     pub r#type: EventType,
     #[serde(rename = "arrivalOrDepartureID")]
     pub arrival_or_departure_id: String,
@@ -57,6 +58,30 @@ pub struct JourneyDetailsMessage {
     pub r#type: String,
     pub display_priority: Option<i32>,
     pub category: Option<String>,
+    pub text: String,
+    pub text_short: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Hash, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct JourneyDetailsDisruption {
+    #[serde(rename = "disruptionID")]
+    pub disruption_id: String,
+    #[serde(rename = "disruptionCommunicationID")]
+    pub disruption_communication_id: Option<String>,
+    pub display_priority: i32,
+    pub descriptions: JourneyDetailsDisruptionDescriptions,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Hash, ToSchema)]
+#[serde(rename_all = "UPPERCASE")]
+pub struct JourneyDetailsDisruptionDescriptions {
+    pub de: JourneyDetailsDisruptionDescription,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Hash, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct JourneyDetailsDisruptionDescription {
     pub text: String,
     pub text_short: Option<String>,
 }

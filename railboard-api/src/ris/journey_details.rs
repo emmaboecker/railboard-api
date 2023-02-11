@@ -134,6 +134,17 @@ pub async fn journey_details(
                 }),
                 transport: departure_arrival.transport,
                 messages: messages.into_iter().collect(),
+                disruptions: departure_arrival
+                    .disruptions
+                    .into_iter()
+                    .map(|disruption| JourneyStopDisruption {
+                        id: disruption.disruption_id,
+                        communication_id: disruption.disruption_communication_id,
+                        text: disruption.descriptions.de.text,
+                        text_short: disruption.descriptions.de.text_short,
+                        priority: disruption.display_priority,
+                    })
+                    .collect(),
                 on_demand: departure_arrival.on_demand,
                 cancelled: departure_arrival.canceled,
                 additional: departure_arrival.canceled,
@@ -191,6 +202,7 @@ pub struct RisJourneyStop {
     #[schema(nullable)]
     pub departure: Option<JourneyStopTime>,
     pub messages: Vec<JourneyDetailsMessage>,
+    pub disruptions: Vec<JourneyStopDisruption>,
     pub transport: Transport,
     pub on_demand: bool,
     pub cancelled: bool,
@@ -218,4 +230,15 @@ pub struct JourneyStopAdministration {
     pub name: String,
     pub operator_code: String,
     pub ris_name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct JourneyStopDisruption {
+    pub id: String,
+    pub communication_id: Option<String>,
+    pub priority: i32,
+    pub text: String,
+    #[schema(nullable)]
+    pub text_short: Option<String>,
 }
