@@ -166,7 +166,7 @@ pub async fn station_board(
         stop.arrival
             .as_ref()
             .map(|arrival| {
-                arrival.planned_time.naive_utc() >= time_start.naive_utc()
+                arrival.planned_time.naive_utc() >= time_start.naive_utc() && arrival.planned_time.naive_utc() <= time_end.naive_utc()
                     || arrival
                         .real_time
                         .map(|real_time| real_time.naive_utc() >= time_start.naive_utc())
@@ -177,7 +177,7 @@ pub async fn station_board(
                 .departure
                 .as_ref()
                 .map(|departure| {
-                    departure.planned_time.naive_utc() <= time_end.naive_utc()
+                    departure.planned_time.naive_utc() >= time_start.naive_utc() && departure.planned_time.naive_utc() <= time_end.naive_utc()
                         || departure
                             .real_time
                             .map(|real_time| real_time.naive_utc() <= time_end.naive_utc())
