@@ -166,24 +166,18 @@ pub async fn station_board(
         stop.arrival
             .as_ref()
             .map(|arrival| {
-                arrival.planned_time.naive_utc() >= time_start.naive_utc() && arrival.planned_time.naive_utc() <= time_end.naive_utc()
-                    || arrival
-                        .real_time
-                        .map(|real_time| real_time.naive_utc() >= time_start.naive_utc())
-                        .unwrap_or(false)
+                arrival.planned_time.naive_utc() >= time_start.naive_utc()
+                    && arrival.planned_time.naive_utc() <= time_end.naive_utc()
             })
-            .unwrap_or(true)
-            && stop
+            .unwrap_or(false)
+            || stop
                 .departure
                 .as_ref()
                 .map(|departure| {
-                    departure.planned_time.naive_utc() >= time_start.naive_utc() && departure.planned_time.naive_utc() <= time_end.naive_utc()
-                        || departure
-                            .real_time
-                            .map(|real_time| real_time.naive_utc() <= time_end.naive_utc())
-                            .unwrap_or(false)
+                    departure.planned_time.naive_utc() >= time_start.naive_utc()
+                        && departure.planned_time.naive_utc() <= time_end.naive_utc()
                 })
-                .unwrap_or(true)
+                .unwrap_or(false)
     }) {
         if !items
             .iter()
