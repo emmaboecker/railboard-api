@@ -55,7 +55,7 @@ pub async fn journey_details(
                         .map(|departure| {
                             stop.0.is_none()
                                 && departure.station.eva_number == event.station.eva_number
-                                && departure.time_schedule > event.time_schedule
+                                && departure.time_schedule >= event.time_schedule
                         })
                         .unwrap_or(false)
                     {
@@ -70,10 +70,10 @@ pub async fn journey_details(
                     if stop
                         .0
                         .as_ref()
-                        .map(|departure| {
+                        .map(|arrival| {
                             stop.1.is_none()
-                                && departure.station.eva_number == event.station.eva_number
-                                && departure.time_schedule < event.time_schedule
+                                && arrival.station.eva_number == event.station.eva_number
+                                && arrival.time_schedule <= event.time_schedule
                         })
                         .unwrap_or(false)
                     {
@@ -242,5 +242,3 @@ pub struct JourneyStopDisruption {
     #[schema(nullable)]
     pub text_short: Option<String>,
 }
-
-
