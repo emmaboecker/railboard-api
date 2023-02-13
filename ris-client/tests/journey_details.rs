@@ -1,3 +1,5 @@
+use chrono::{TimeZone, Utc};
+use chrono_tz::Europe::Berlin;
 use dotenvy::dotenv;
 use ris_client::RisClient;
 
@@ -10,8 +12,14 @@ async fn journey_details() {
 
     let ris_client = RisClient::new(None, None, None, &client_id, &api_key);
 
+    let current = Berlin.from_utc_datetime(&Utc::now().naive_utc());
+
     let station_board = ris_client
-        .station_board_departures("8000105", None, None)
+        .station_board_departures(
+            "8000105",
+            Some(current),
+            Some(current + chrono::Duration::hours(1)),
+        )
         .await;
 
     let station_board = station_board.expect("Failed to get station board");
