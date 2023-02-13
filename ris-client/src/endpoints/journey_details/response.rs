@@ -103,5 +103,11 @@ pub struct Transport {
     pub number: i32,
     pub line: Option<String>,
     pub label: Option<String>,
-    pub replacement_transport: Option<String>,
+    pub replacement_transport: Option<ReplacementTransport>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Hash, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ReplacementTransport {
+    pub real_type: String,
 }
