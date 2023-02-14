@@ -6,7 +6,7 @@ use axum::{
 };
 use chrono::{DateTime, Datelike, FixedOffset, TimeZone, Utc};
 use chrono_tz::Europe::Berlin;
-use iris_client::station_board::{message::Message, RouteStop};
+use iris_client::station_board::{message::Message, IrisStationBoard, RouteStop};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
@@ -74,7 +74,12 @@ pub async fn station_board(
     );
 
     let ris_station_board = ris_station_board?;
-    let iris_station_board = iris_station_board?;
+    let iris_station_board = iris_station_board.unwrap_or(IrisStationBoard {
+        station_name: String::new(),
+        station_eva: String::new(),
+        stops: vec![],
+        disruptions: vec![],
+    });
 
     let items = ris_station_board.items;
 

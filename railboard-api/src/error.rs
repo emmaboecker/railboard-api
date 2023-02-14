@@ -93,12 +93,12 @@ impl From<IrisOrRequestError> for RailboardApiError {
                 error: None,
             },
             IrisOrRequestError::IrisError(err) => RailboardApiError {
-                domain: ErrorDomain::Vendo,
+                domain: ErrorDomain::Iris,
                 message: format!("Failed to get from Iris: {err}"),
                 error: Some(UnderlyingApiError::Iris),
             },
             IrisOrRequestError::InvalidXML(err) => RailboardApiError {
-                domain: ErrorDomain::Vendo,
+                domain: ErrorDomain::Iris,
                 message: format!("Got invalid/unrecognized xml from Iris: {err}"),
                 error: None,
             },
