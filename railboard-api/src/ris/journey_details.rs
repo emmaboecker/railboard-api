@@ -147,7 +147,7 @@ pub async fn journey_details(
                     .collect(),
                 on_demand: departure_arrival.on_demand,
                 cancelled: departure_arrival.canceled,
-                additional: departure_arrival.canceled,
+                additional: departure_arrival.additional,
                 scheduled_platform: departure_arrival.platform_schedule,
                 real_platform: departure_arrival.platform,
                 administration: JourneyStopAdministration {
