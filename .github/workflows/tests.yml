@@ -6,15 +6,13 @@ jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
+    if: "github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository"
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
+      - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - uses: actions-rs/cargo@v1
+      - name: Run Tests
+        run: cargo test
         env:
           RIS_API_KEY: ${{ secrets.RIS_API_KEY }}
           RIS_CLIENT_ID: ${{ secrets.RIS_CLIENT_ID }}
-        with:
-          command: test
