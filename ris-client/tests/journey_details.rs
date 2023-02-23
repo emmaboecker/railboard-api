@@ -33,7 +33,12 @@ async fn journey_details() {
     let journey_details = ris_client
         .journey_details(&first.train.journey_id)
         .await
-        .expect("Failed to get journey details");
+        .unwrap_or_else(|e| {
+            panic!(
+                "Failed to get journey details for train: {:#?} \n Error: {:#?}",
+                first.train, e
+            )
+        });
 
     let event = journey_details
         .events

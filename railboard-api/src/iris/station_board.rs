@@ -142,6 +142,9 @@ pub async fn iris_station_board(
 
     let mut stops = Vec::new();
 
+    // TODO: find additional stops in realtime that are not in planned 
+    // realtime.stops.iter().filter(|stop| todo!());
+
     for timetable in timetables {
         for stop in timetable.stops {
             let realtime = realtime
