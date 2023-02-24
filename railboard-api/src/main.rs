@@ -73,7 +73,7 @@ pub use helpers::*;
         ris_client::journey_details::JourneyDetailsMessage,
         ris_client::journey_details::Transport,
         ris_client::journey_details::ReplacementTransport,
-        ris::journey_details::JourneyStopTime,
+        ris::journey_details::JourneyStopEvent,
         ris::journey_details::JourneyStopAdministration,
         ris::journey_details::JourneyStopDisruption,
         ris::station_board::RisStationBoard,

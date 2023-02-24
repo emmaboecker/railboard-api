@@ -122,12 +122,18 @@ pub async fn journey_details(
             RisJourneyStop {
                 stop_id: departure_arrival.station.eva_number,
                 stop_name: departure_arrival.station.name,
-                arrival: arrival.map(|arrival| JourneyStopTime {
+                arrival: arrival.map(|arrival| JourneyStopEvent {
+                    cancelled: arrival.canceled,
+                    additional: arrival.additional,
+                    on_demand: arrival.on_demand,
                     scheduled: arrival.time_schedule,
                     realtime: arrival.time,
                     time_type: arrival.time_type,
                 }),
-                departure: departure.map(|departure| JourneyStopTime {
+                departure: departure.map(|departure| JourneyStopEvent {
+                    cancelled: departure.canceled,
+                    additional: departure.additional,
+                    on_demand: departure.on_demand,
                     scheduled: departure.time_schedule,
                     realtime: departure.time,
                     time_type: departure.time_type,
@@ -145,9 +151,6 @@ pub async fn journey_details(
                         priority: disruption.display_priority,
                     })
                     .collect(),
-                on_demand: departure_arrival.on_demand,
-                cancelled: departure_arrival.canceled,
-                additional: departure_arrival.additional,
                 scheduled_platform: departure_arrival.platform_schedule,
                 real_platform: departure_arrival.platform,
                 administration: JourneyStopAdministration {
@@ -198,15 +201,12 @@ pub struct RisJourneyStop {
     pub stop_id: String,
     pub stop_name: String,
     #[schema(nullable)]
-    pub arrival: Option<JourneyStopTime>,
+    pub arrival: Option<JourneyStopEvent>,
     #[schema(nullable)]
-    pub departure: Option<JourneyStopTime>,
+    pub departure: Option<JourneyStopEvent>,
     pub messages: Vec<JourneyDetailsMessage>,
     pub disruptions: Vec<JourneyStopDisruption>,
     pub transport: Transport,
-    pub on_demand: bool,
-    pub cancelled: bool,
-    pub additional: bool,
     #[schema(nullable)]
     pub scheduled_platform: Option<String>,
     #[schema(nullable)]
@@ -216,7 +216,10 @@ pub struct RisJourneyStop {
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
-pub struct JourneyStopTime {
+pub struct JourneyStopEvent {
+    pub cancelled: bool,
+    pub additional: bool,
+    pub on_demand: bool,
     pub scheduled: DateTime<FixedOffset>,
     #[schema(nullable)]
     pub realtime: Option<DateTime<FixedOffset>>,
