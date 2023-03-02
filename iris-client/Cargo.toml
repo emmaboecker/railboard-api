@@ -26,4 +26,4 @@ wu-diff = "0.1.2"
 
 
 [dev-dependencies]
-tokio = { version = "1.25.0", features = ["full"] }
+tokio = { version = "1.26.0", features = ["full"] }

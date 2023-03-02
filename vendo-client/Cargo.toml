@@ -23,4 +23,4 @@ utoipa = { version = "3.0.3", features = ["chrono"] }
 urlencoding = "2.1.2"
 
 [dev-dependencies]
-tokio = { version = "1.25.0", features = ["full"] }
+tokio = { version = "1.26.0", features = ["full"] }
