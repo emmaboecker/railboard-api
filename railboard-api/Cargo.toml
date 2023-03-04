@@ -43,4 +43,4 @@ redis = { version = "0.22.3", features = [
     "connection-manager",
 ] }
 
-erased-serde = "0.3.24"
+erased-serde = "0.3.25"
