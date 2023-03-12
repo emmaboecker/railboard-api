@@ -13,6 +13,7 @@ mod lookup;
 #[serde(rename_all = "camelCase")]
 pub struct Message {
     pub id: String,
+    #[schema(value_type = String)]
     pub timestamp: NaiveDateTime,
     #[schema(nullable)]
     /// The message code (e.G. `59` for `Schnee und Eis`)
@@ -21,9 +22,9 @@ pub struct Message {
     pub matched_text: Option<String>,
     #[schema(nullable)]
     pub category: Option<String>,
-    #[schema(nullable)]
+    #[schema(nullable, value_type = String)]
     pub valid_from: Option<NaiveDateTime>,
-    #[schema(nullable)]
+    #[schema(nullable, value_type = String)]
     pub valid_to: Option<NaiveDateTime>,
     pub message_status: MessageStatus,
     #[schema(nullable)]

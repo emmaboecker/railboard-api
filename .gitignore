@@ -12,3 +12,5 @@ iris-client/schema/*
 # Editor folders and files
 .idea
 .vscode
+
+mitm.pem

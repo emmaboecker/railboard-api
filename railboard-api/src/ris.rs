@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use axum::{routing::get, Router};
+// use reqwest::{Certificate, Client, Proxy};
 use ris_client::RisClient;
 
 use crate::cache::RedisCache;
@@ -16,6 +17,12 @@ pub struct RisState {
 }
 
 pub fn router(redis: Arc<redis::Client>, db_client_id: &str, db_api_key: &str) -> Router {
+    // let client = Client::builder()
+    //     .add_root_certificate(Certificate::from_pem(include_bytes!("../../mitm.pem")).unwrap())
+    //     .proxy(Proxy::all("http://localhost:8080").unwrap())
+    //     .build()
+    //     .unwrap();
+
     let ris_client = Arc::new(RisClient::new(None, None, None, db_client_id, db_api_key));
 
     let shared_state = Arc::new(RisState {
