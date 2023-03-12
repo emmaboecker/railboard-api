@@ -9,8 +9,15 @@ pub struct RisError {
     pub error_code: i32,
     pub title: String,
     pub detail: String,
+    #[schema(nullable)]
     pub status: Option<String>,
-    pub instance_id: String,
+    #[schema(nullable)]
+    pub instance_id: Option<String>,
+    #[schema(nullable)]
+    pub trace_id: Option<String>,
+    #[schema(nullable)]
+    pub span_id: Option<String>,
+    #[schema(nullable)]
     pub errors: Option<String>,
 }
 

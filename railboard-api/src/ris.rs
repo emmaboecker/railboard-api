@@ -8,6 +8,7 @@ use crate::cache::RedisCache;
 pub mod journey_details;
 pub mod journey_search;
 pub mod station_board;
+pub mod station_information;
 
 pub struct RisState {
     ris_client: Arc<RisClient>,
@@ -32,5 +33,9 @@ pub fn router(redis: Arc<redis::Client>, db_client_id: &str, db_api_key: &str) -
             get(journey_details::journey_details),
         )
         .route("/station_board/:eva", get(station_board::station_board))
+        .route(
+            "/station/:eva",
+            get(station_information::station_information),
+        )
         .with_state(shared_state)
 }

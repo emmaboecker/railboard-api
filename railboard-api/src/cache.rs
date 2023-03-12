@@ -9,7 +9,10 @@ use serde::{de::DeserializeOwned, Serialize};
 use thiserror::Error;
 
 use crate::{
-    ris::{journey_details::RisJourneyDetails, station_board::RisStationBoard},
+    ris::{
+        journey_details::RisJourneyDetails, station_board::RisStationBoard,
+        station_information::StationInformation,
+    },
     vendo::{
         journey_details::JourneyDetails, location_search::LocationSearchCache,
         station_board::StationBoard,
@@ -206,6 +209,15 @@ impl CachableObject for RisStationBoard {
             self.time_start.naive_utc().format("%Y-%m-%dT%H:%M"),
             self.time_end.naive_utc().format("%Y-%m-%dT%H:%M")
         );
+
+        cache.insert_to_cache(key, &self, 180).await
+    }
+}
+
+#[async_trait::async_trait]
+impl CachableObject for StationInformation {
+    async fn insert_to_cache<C: Cache>(&self, cache: &C) -> Result<(), CacheInsertError> {
+        let key = format!("ris.station-information.{}", self.eva);
 
         cache.insert_to_cache(key, &self, 180).await
     }

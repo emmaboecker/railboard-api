@@ -30,6 +30,7 @@ pub use helpers::*;
         ris::journey_search::journey_search,
         ris::journey_details::journey_details,
         ris::station_board::station_board,
+        ris::station_information::station_information,
         custom::station_board::station_board,
     ),
     components(schemas(
@@ -80,6 +81,9 @@ pub use helpers::*;
         ris::station_board::RisStationBoardItem,
         ris::station_board::RisStationBoardItemAdministration,
         ris::station_board::DepartureArrival,
+        ris::station_information::StationInformation,
+        ris::station_information::StationNameContent,
+        ris::station_information::Position,
         // Custom stuff
         custom::station_board::StationBoard,
         custom::station_board::StationBoardItem,
