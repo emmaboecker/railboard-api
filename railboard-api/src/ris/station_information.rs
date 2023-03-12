@@ -95,7 +95,8 @@ impl From<ris_client::station_information::StationInformation> for StationInform
 #[serde(rename_all = "camelCase")]
 pub struct StationInformation {
     pub eva: String,
-    pub station_id: String,
+    #[schema(nullable)]
+    pub station_id: Option<String>,
     pub names: StationNameContent,
     pub metropolis: Option<String>,
     pub available_transports: Vec<String>,
@@ -111,7 +112,9 @@ pub struct StationInformation {
 #[serde(rename_all = "camelCase")]
 pub struct StationNameContent {
     pub name_long: String,
+    #[schema(nullable)]
     pub speech_long: Option<String>,
+    #[schema(nullable)]
     pub speech_short: Option<String>,
 }
 

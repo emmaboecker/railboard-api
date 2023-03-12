@@ -12,7 +12,7 @@ pub struct StationInformationResponse {
 pub struct StationInformation {
     pub eva_number: String,
     #[serde(rename = "stationID")]
-    pub station_id: String,
+    pub station_id: Option<String>,
     pub names: Translatable<StationNameContent>,
     pub metropolis: Option<Translatable<String>>,
     pub available_transports: Vec<String>,
