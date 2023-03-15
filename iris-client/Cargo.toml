@@ -21,7 +21,7 @@ thiserror = "1.0.38"
 utoipa = { version = "3.0.3", features = ["chrono"] }
 
 urlencoding = "2.1.2"
-futures = "0.3.26"
+futures = "0.3.27"
 wu-diff = "0.1.2"
 
 
