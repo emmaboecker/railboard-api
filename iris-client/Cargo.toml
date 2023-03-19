@@ -12,7 +12,7 @@ tokio = { version = "1", features = ["full"] }
 serde = { version = "1", features = ["derive"] }
 serde-xml-rs = "0.6.0"
 
-chrono = { version = "0.4.23", features = ["serde"] }
+chrono = { version = "0.4.24", features = ["serde"] }
 chrono-tz = "0.8.1"
 
 async-lock = "2.7.0"
