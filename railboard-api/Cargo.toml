@@ -34,7 +34,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 async-trait = "0.1.65"
 
-dotenvy = "0.15.6"
+dotenvy = "0.15.7"
 
 # Caching
 redis = { version = "0.22.3", features = [
