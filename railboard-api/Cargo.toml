@@ -32,7 +32,7 @@ utoipa-swagger-ui = { version = "3.1.1", features = ["axum"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
-async-trait = "0.1.65"
+async-trait = "0.1.68"
 
 dotenvy = "0.15.7"
 
