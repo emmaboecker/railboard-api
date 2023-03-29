@@ -25,4 +25,4 @@ urlencoding = "2.1.2"
 [dev-dependencies]
 iris-client = { path = "../iris-client" }
 tokio = { version = "1.27.0", features = ["full"] }
-dotenvy = "0.15.6"
+dotenvy = "0.15.7"
