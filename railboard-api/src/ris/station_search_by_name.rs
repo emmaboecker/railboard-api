@@ -28,7 +28,7 @@ pub struct RisStationSearchQuery {
     ),
     tag = "Ris",
     responses(
-        (status = 200, description = "The requested Journey Details", body = RisJourneyDetails),
+        (status = 200, description = "The requested Station Search Information", body = RisStationSearchResponse),
         (status = 400, description = "The Error returned by Ris, will be the Ris Domain with UnderlyingApiError Variant 3 or 4", body = RailboardApiError),
         (status = 500, description = "The Error returned if the request or deserialization fails, will be domain Request", body = RailboardApiError)
     )
