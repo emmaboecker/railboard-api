@@ -6,6 +6,8 @@ use tracing::metadata::LevelFilter;
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
+#[cfg(unix)]
+use tokio::signal::unix::SignalKind;
 
 pub mod cache;
 pub mod error;
@@ -146,7 +148,27 @@ async fn main() {
     
     let bind_addr = std::env::var("API_URL").unwrap_or_else(|_| String::from("0.0.0.0:8080"));
 
-    let server = Server::bind(&bind_addr.parse().unwrap()).serve(app.into_make_service());
+    let server = Server::bind(&bind_addr.parse().unwrap()).serve(app.into_make_service()).with_graceful_shutdown(shutdown_hook());
     tracing::info!("Listening on {}", bind_addr);
     server.await.unwrap();
+}
+
+async fn shutdown_hook() {
+    #[cfg(unix)]
+    tokio::select! {
+        _ = async {
+            let mut signal = ::tokio::signal::unix::signal(SignalKind::interrupt()).unwrap();
+            signal.recv().await;
+        } => {
+            tracing::info!("Received SIGINT. Shutting down.");
+        },
+        _ = async {
+            let mut signal = ::tokio::signal::unix::signal(SignalKind::terminate()).unwrap();
+            signal.recv().await;
+        } => {
+            tracing::info!("Received SIGTERM. Shutting down.");
+        },
+    }
+    #[cfg(not(unix))]
+    tokio::signal::ctrl_c().await.unwrap()
 }
