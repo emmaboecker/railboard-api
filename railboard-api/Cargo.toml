@@ -27,7 +27,7 @@ thiserror = "1.0.40"
 
 futures = "0.3.27"
 utoipa = { version = "3.2.0", features = ["axum_extras", "chrono"] }
-utoipa-swagger-ui = { version = "3.1.1", features = ["axum"] }
+utoipa-swagger-ui = { version = "3.1.4", features = ["axum"] }
 
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
