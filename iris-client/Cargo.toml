@@ -13,7 +13,7 @@ serde = { version = "1", features = ["derive"] }
 serde-xml-rs = "0.6.0"
 
 chrono = { version = "0.4.24", features = ["serde"] }
-chrono-tz = "0.8.1"
+chrono-tz = "0.8.3"
 
 async-lock = "2.7.0"
 thiserror = "1.0.40"
