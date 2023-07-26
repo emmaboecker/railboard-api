@@ -35,8 +35,11 @@ pub struct Translatable<T> {
 #[serde(rename_all = "camelCase")]
 pub struct StationNameContent {
     pub name_long: String,
+    #[schema(nullable)]
     pub speech_long: Option<String>,
+    #[schema(nullable)]
     pub speech_short: Option<String>,
+    #[schema(nullable)]
     pub symbol: Option<String>,
 }
 

@@ -14,6 +14,7 @@ pub struct RisStationSearchResponse {
 pub struct StationSearchResponse {
     pub eva_number: String,
     #[serde(rename = "stationID")]
+    #[schema(nullable)]
     pub station_id: Option<String>,
     pub group_members: Vec<String>,
     pub names: Translatable<StationNameContent>,

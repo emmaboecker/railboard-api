@@ -31,6 +31,7 @@ pub use helpers::*;
         ris::journey_details::journey_details,
         ris::station_board::station_board,
         ris::station_information::station_information,
+        ris::station_search_by_name::station_search_by_name,
         custom::station_board::station_board,
     ),
     components(schemas(

@@ -198,7 +198,7 @@ pub async fn ris_station_board(
     {
         let station_board = station_board.clone();
         tokio::spawn(async move {
-            let _ = station_board.insert_to_cache(cache.as_ref()).await;
+            let _ = station_board.insert_to_cache(cache.as_ref(), None).await;
         });
     }
 

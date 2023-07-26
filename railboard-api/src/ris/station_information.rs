@@ -59,7 +59,7 @@ pub async fn station_information(
     {
         let response = response.clone();
         tokio::spawn(async move {
-            let _ = response.insert_to_cache(state.cache.clone().as_ref()).await;
+            let _ = response.insert_to_cache(state.cache.clone().as_ref(), None).await;
         });
     }
 

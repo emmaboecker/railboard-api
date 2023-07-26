@@ -4,7 +4,9 @@ use chrono::TimeZone;
 use chrono_tz::Europe::Berlin;
 use iris_client::station_board::response::TimeTable;
 use redis::JsonAsyncCommands;
-use ris_client::journey_search::RisJourneySearchResponse;
+use ris_client::{
+    journey_search::RisJourneySearchResponse, station_search::RisStationSearchResponse,
+};
 use serde::{de::DeserializeOwned, Serialize};
 use thiserror::Error;
 
@@ -122,12 +124,20 @@ impl Cache for RedisCache {
 
 #[async_trait::async_trait]
 pub trait CachableObject {
-    async fn insert_to_cache<C: Cache>(&self, cache: &C) -> Result<(), CacheInsertError>;
+    async fn insert_to_cache<C: Cache>(
+        &self,
+        cache: &C,
+        information: Option<&str>,
+    ) -> Result<(), CacheInsertError>;
 }
 
 #[async_trait::async_trait]
 impl CachableObject for StationBoard {
-    async fn insert_to_cache<C: Cache>(&self, cache: &C) -> Result<(), CacheInsertError> {
+    async fn insert_to_cache<C: Cache>(
+        &self,
+        cache: &C,
+        _information: Option<&str>,
+    ) -> Result<(), CacheInsertError> {
         let key = format!("vendo.station-board.{}.{}.{}", self.id, self.day, self.time);
 
         cache.insert_to_cache(key, self, 90).await
@@ -136,7 +146,11 @@ impl CachableObject for StationBoard {
 
 #[async_trait::async_trait]
 impl CachableObject for LocationSearchCache {
-    async fn insert_to_cache<C: Cache>(&self, cache: &C) -> Result<(), CacheInsertError> {
+    async fn insert_to_cache<C: Cache>(
+        &self,
+        cache: &C,
+        _information: Option<&str>,
+    ) -> Result<(), CacheInsertError> {
         let key = format!("vendo.location-search.{}", self.query);
 
         cache.insert_to_cache(key, self, 60 * 60 * 24 * 7).await
@@ -145,7 +159,11 @@ impl CachableObject for LocationSearchCache {
 
 #[async_trait::async_trait]
 impl CachableObject for JourneyDetails {
-    async fn insert_to_cache<C: Cache>(&self, cache: &C) -> Result<(), CacheInsertError> {
+    async fn insert_to_cache<C: Cache>(
+        &self,
+        cache: &C,
+        _information: Option<&str>,
+    ) -> Result<(), CacheInsertError> {
         let key = format!("vendo.journey-details.{}", self.journey_id);
 
         cache.insert_to_cache(key, self, 90).await
@@ -154,7 +172,11 @@ impl CachableObject for JourneyDetails {
 
 #[async_trait::async_trait]
 impl CachableObject for (TimeTable, String, String, String) {
-    async fn insert_to_cache<C: Cache>(&self, cache: &C) -> Result<(), CacheInsertError> {
+    async fn insert_to_cache<C: Cache>(
+        &self,
+        cache: &C,
+        _information: Option<&str>,
+    ) -> Result<(), CacheInsertError> {
         let key = format!("iris.station-board.plan.{}.{}.{}", self.1, self.2, self.3);
 
         cache.insert_to_cache(key, &self.0, 180).await
@@ -163,7 +185,11 @@ impl CachableObject for (TimeTable, String, String, String) {
 
 #[async_trait::async_trait]
 impl CachableObject for (TimeTable, String) {
-    async fn insert_to_cache<C: Cache>(&self, cache: &C) -> Result<(), CacheInsertError> {
+    async fn insert_to_cache<C: Cache>(
+        &self,
+        cache: &C,
+        _information: Option<&str>,
+    ) -> Result<(), CacheInsertError> {
         let key = format!("iris.station-board.realtime.{}", self.1);
 
         cache.insert_to_cache(key, &self.0, 30).await
@@ -172,7 +198,11 @@ impl CachableObject for (TimeTable, String) {
 
 #[async_trait::async_trait]
 impl CachableObject for (String, String, RisJourneySearchResponse) {
-    async fn insert_to_cache<C: Cache>(&self, cache: &C) -> Result<(), CacheInsertError> {
+    async fn insert_to_cache<C: Cache>(
+        &self,
+        cache: &C,
+        _information: Option<&str>,
+    ) -> Result<(), CacheInsertError> {
         let key = format!(
             "ris.journey-search.{}.{}.{}",
             self.0,
@@ -193,7 +223,11 @@ impl CachableObject for (String, String, RisJourneySearchResponse) {
 
 #[async_trait::async_trait]
 impl CachableObject for RisJourneyDetails {
-    async fn insert_to_cache<C: Cache>(&self, cache: &C) -> Result<(), CacheInsertError> {
+    async fn insert_to_cache<C: Cache>(
+        &self,
+        cache: &C,
+        _information: Option<&str>,
+    ) -> Result<(), CacheInsertError> {
         let key = format!("ris.journey-details.{}", self.id);
 
         cache.insert_to_cache(key, &self, 90).await
@@ -202,7 +236,11 @@ impl CachableObject for RisJourneyDetails {
 
 #[async_trait::async_trait]
 impl CachableObject for RisStationBoard {
-    async fn insert_to_cache<C: Cache>(&self, cache: &C) -> Result<(), CacheInsertError> {
+    async fn insert_to_cache<C: Cache>(
+        &self,
+        cache: &C,
+        _information: Option<&str>,
+    ) -> Result<(), CacheInsertError> {
         let key = format!(
             "ris.station-board.{}.{}.{}",
             self.eva,
@@ -216,8 +254,25 @@ impl CachableObject for RisStationBoard {
 
 #[async_trait::async_trait]
 impl CachableObject for StationInformation {
-    async fn insert_to_cache<C: Cache>(&self, cache: &C) -> Result<(), CacheInsertError> {
+    async fn insert_to_cache<C: Cache>(
+        &self,
+        cache: &C,
+        _information: Option<&str>,
+    ) -> Result<(), CacheInsertError> {
         let key = format!("ris.station-information.{}", self.eva);
+
+        cache.insert_to_cache(key, &self, 180).await
+    }
+}
+
+#[async_trait::async_trait]
+impl CachableObject for RisStationSearchResponse {
+    async fn insert_to_cache<C: Cache>(
+        &self,
+        cache: &C,
+        information: Option<&str>,
+    ) -> Result<(), CacheInsertError> {
+        let key = format!("ris.station_search_by_name.{}", information.unwrap_or(""));
 
         cache.insert_to_cache(key, &self, 180).await
     }

@@ -49,7 +49,7 @@ pub async fn location_search(
         results: result.clone(),
     };
 
-    tokio::spawn(async move { location_search.insert_to_cache(&state.cache).await });
+    tokio::spawn(async move { location_search.insert_to_cache(&state.cache, None).await });
 
     Ok(Json(result))
 }

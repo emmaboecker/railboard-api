@@ -118,9 +118,9 @@ pub async fn iris_station_board(
                         date.format("%H").to_string(),
                     );
                     let cache = cache.clone();
-                    tokio::spawn(
-                        async move { cache_timetable.insert_to_cache(cache.as_ref()).await },
-                    );
+                    tokio::spawn(async move {
+                        cache_timetable.insert_to_cache(cache.as_ref(), None).await
+                    });
                     Ok(timetable)
                 }
                 Err(err) => Err(err),
@@ -142,7 +142,7 @@ pub async fn iris_station_board(
 
     let mut stops = Vec::new();
 
-    // TODO: find additional stops in realtime that are not in planned 
+    // TODO: find additional stops in realtime that are not in planned
     // realtime.stops.iter().filter(|stop| todo!());
 
     for timetable in timetables {
@@ -204,9 +204,11 @@ async fn get_realtime(
         Ok(realtime) => {
             let realtime = realtime;
             let cache_realtime = (realtime.clone(), id.to_owned());
-            tokio::spawn(
-                async move { cache_realtime.insert_to_cache(cache.clone().as_ref()).await },
-            );
+            tokio::spawn(async move {
+                cache_realtime
+                    .insert_to_cache(cache.clone().as_ref(), None)
+                    .await
+            });
             Ok(realtime)
         }
         Err(err) => Err(err),

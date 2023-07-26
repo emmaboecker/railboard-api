@@ -176,7 +176,7 @@ pub async fn journey_details(
 
     {
         let response = response.clone();
-        tokio::spawn(async move { response.insert_to_cache(state.cache.as_ref()).await });
+        tokio::spawn(async move { response.insert_to_cache(state.cache.as_ref(), None).await });
     }
 
     Ok(Json(response))

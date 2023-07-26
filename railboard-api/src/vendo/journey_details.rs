@@ -101,7 +101,7 @@ pub async fn journey_details(
 
     {
         let cached = mapped.clone();
-        tokio::spawn(async move { cached.insert_to_cache(&state.cache).await });
+        tokio::spawn(async move { cached.insert_to_cache(&state.cache, None).await });
     }
 
     Ok(Json(mapped))

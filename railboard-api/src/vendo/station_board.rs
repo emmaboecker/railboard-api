@@ -167,7 +167,7 @@ pub async fn station_board(
 
     {
         let station_board = station_board.clone();
-        tokio::spawn(async move { station_board.insert_to_cache(&state.cache).await });
+        tokio::spawn(async move { station_board.insert_to_cache(&state.cache, None).await });
     }
 
     Ok(Json(station_board))

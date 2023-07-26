@@ -81,7 +81,7 @@ pub async fn journey_search(
             let category = category.clone();
             let number = number.clone();
             (category, number, response)
-                .insert_to_cache(cache.clone().as_ref())
+                .insert_to_cache(cache.clone().as_ref(), None)
                 .await
         });
     }
