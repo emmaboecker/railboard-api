@@ -1,46 +1,69 @@
-[package]
-name = "railboard-api"
-version = "0.1.0"
-edition = "2021"
-publish = false
-
 [dependencies]
-axum = "0.6"
-reqwest = { version = "0.11", features = [
-    "json",
-    "rustls-tls",
-], default-features = false }
-tokio = { version = "1", features = ["full"] }
+async-lock = '2.7.0'
+async-trait = '0.1.72'
+axum = '0.6.19'
+chrono-tz = '0.8.3'
+dotenvy = '0.15.7'
+erased-serde = '0.3.28'
+futures = '0.3.28'
+serde_json = '1.0.103'
+thiserror = '1.0.44'
+tracing = '0.1.37'
 
-vendo-client = { path = "../vendo-client" }
-iris-client = { path = "../iris-client" }
-ris-client = { path = "../ris-client" }
+[dependencies.chrono]
+features = ['serde']
+version = '0.4.26'
 
-serde = { version = "1", features = ["derive"] }
-serde_json = "1.0.95"
+[dependencies.iris-client]
+path = '../iris-client'
 
-chrono = { version = "0.4.24", features = ["serde"] }
-chrono-tz = "0.8.1"
+[dependencies.redis]
+features = [
+    'tokio-comp',
+    'json',
+    'connection-manager',
+]
+version = '0.23.0'
 
-async-lock = "2.7.0"
-thiserror = "1.0.40"
+[dependencies.reqwest]
+default-features = false
+features = [
+    'json',
+    'rustls-tls',
+]
+version = '0.11.18'
 
-futures = "0.3.27"
-utoipa = { version = "3.2.0", features = ["axum_extras", "chrono"] }
-utoipa-swagger-ui = { version = "3.1.1", features = ["axum"] }
+[dependencies.ris-client]
+path = '../ris-client'
 
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+[dependencies.serde]
+features = ['derive']
+version = '1.0.175'
 
-async-trait = "0.1.68"
+[dependencies.tokio]
+features = ['full']
+version = '1.29.1'
 
-dotenvy = "0.15.7"
+[dependencies.tracing-subscriber]
+features = ['env-filter']
+version = '0.3.17'
 
-# Caching
-redis = { version = "0.22.3", features = [
-    "tokio-comp",
-    "json",
-    "connection-manager",
-] }
+[dependencies.utoipa]
+features = [
+    'axum_extras',
+    'chrono',
+]
+version = '3.4.3'
 
-erased-serde = "0.3.25"
+[dependencies.utoipa-swagger-ui]
+features = ['axum']
+version = '3.1.4'
+
+[dependencies.vendo-client]
+path = '../vendo-client'
+
+[package]
+edition = '2021'
+name = 'railboard-api'
+publish = false
+version = '0.1.0'

@@ -1,2 +1,8 @@
 [workspace]
-members = ["railboard-api", "vendo-client", "iris-client", "ris-client"]
+members = [
+    'railboard-api',
+    'vendo-client',
+    'iris-client',
+    'ris-client',
+]
+resolver = '2'
