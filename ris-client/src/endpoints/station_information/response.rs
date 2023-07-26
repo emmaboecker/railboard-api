@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -24,21 +25,22 @@ pub struct StationInformation {
     pub position: Position,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash, Clone, ToSchema)]
 #[serde(rename_all = "UPPERCASE")]
 pub struct Translatable<T> {
     pub de: T,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct StationNameContent {
     pub name_long: String,
     pub speech_long: Option<String>,
     pub speech_short: Option<String>,
+    pub symbol: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Position {
     pub longitude: f64,

@@ -84,6 +84,11 @@ pub use helpers::*;
         ris::station_information::StationInformation,
         ris::station_information::StationNameContent,
         ris::station_information::Position,
+        ris::station_information::Position,
+        ris_client::station_search::RisStationSearchResponse,
+        ris_client::station_search::StationSearchResponse,
+        ris_client::station_information::Translatable<ris_client::station_information::StationNameContent>,
+        ris_client::station_information::StationNameContent,
         // Custom stuff
         custom::station_board::StationBoard,
         custom::station_board::StationBoardItem,
