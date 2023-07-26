@@ -23,7 +23,7 @@ chrono = { version = "0.4.24", features = ["serde"] }
 chrono-tz = "0.8.1"
 
 async-lock = "2.7.0"
-thiserror = "1.0.40"
+thiserror = "1.0.44"
 
 futures = "0.3.27"
 utoipa = { version = "3.2.0", features = ["axum_extras", "chrono"] }
