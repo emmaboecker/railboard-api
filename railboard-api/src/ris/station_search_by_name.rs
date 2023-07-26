@@ -23,7 +23,7 @@ pub struct RisStationSearchQuery {
     get,
     path = "/ris/v1/station_search/{query}",
     params(
-        ("query" = String, Path, description = "The Query for the station (for example: \"Lepzig Hbf\")"),
+        ("query" = String, Path, description = "The Query for the station (for example: \"Leipzig\")"),
         ("limit" = Option<u32>, Query, description = "The maximum amount of results to return (default: 25)")
     ),
     tag = "Ris",
