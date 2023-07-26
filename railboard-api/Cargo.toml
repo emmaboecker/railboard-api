@@ -25,7 +25,7 @@ chrono-tz = "0.8.1"
 async-lock = "2.7.0"
 thiserror = "1.0.40"
 
-futures = "0.3.27"
+futures = "0.3.28"
 utoipa = { version = "3.2.0", features = ["axum_extras", "chrono"] }
 utoipa-swagger-ui = { version = "3.1.1", features = ["axum"] }
 
