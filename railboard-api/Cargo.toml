@@ -38,7 +38,7 @@ path = '../ris-client'
 
 [dependencies.serde]
 features = ['derive']
-version = '1.0.180'
+version = '1.0.188'
 
 [dependencies.tokio]
 features = ['full']
