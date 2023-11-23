@@ -27,7 +27,7 @@ version = '1.29.1'
 
 [dependencies.utoipa]
 features = ['chrono']
-version = '3.4.3'
+version = '3.5.0'
 [dev-dependencies.tokio]
 features = ['full']
 version = '1.29.1'
