@@ -1,7 +1,6 @@
 use crate::{VendoClient, VendoError, VendoOrRequestError};
 
 mod request;
-pub use request::*;
 mod response;
 use reqwest::header::{HeaderValue, ACCEPT, CONTENT_TYPE};
 pub use response::*;
@@ -15,7 +14,7 @@ impl VendoClient {
         &self,
         query: String,
         location_types: Option<Vec<String>>,
-    ) -> Result<Vec<LocationSearchResult>, VendoOrRequestError> {
+    ) -> Result<Vec<VendoLocationSearchResult>, VendoOrRequestError> {
         let _permit = self.semaphore.acquire().await;
 
         let location_types = location_types.unwrap_or_default();
@@ -59,6 +58,6 @@ impl VendoClient {
 #[derive(Deserialize, Debug)]
 #[serde(untagged)]
 enum VendoLocationSearchResponse {
-    VendoResponse(Vec<LocationSearchResult>),
+    VendoResponse(Vec<VendoLocationSearchResult>),
     VendoError(VendoError),
 }

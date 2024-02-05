@@ -1,7 +1,14 @@
-use vendo_client::{station_board::StationBoardDeparturesElement, VendoClient};
+use vendo_client::VendoClient;
 
 #[tokio::test]
 async fn journey_details() {
+    // let http_client =
+    //     Client::builder()
+    //         .add_root_certificate(Certificate::from_pem(include_bytes!("../../mitm.pem")).unwrap())
+    //         .proxy(Proxy::all("http://localhost:8080").unwrap())
+    //         .build()
+    //         .unwrap();
+
     let client = VendoClient::default();
 
     let station_board = client
@@ -13,7 +20,7 @@ async fn journey_details() {
         .departures
         .into_iter()
         .filter(|train| train.product_type == "ICE")
-        .collect::<Vec<StationBoardDeparturesElement>>();
+        .collect::<Vec<_>>();
 
     let first_train = highspeed_trains.first();
 

@@ -14,7 +14,7 @@ async fn station_search() {
 
     let result = result.expect("Failed to get station search");
 
-    assert_eq!(result.stop_places.len(), 25);
-    assert_eq!("8010205", result.stop_places[0].eva_number);
-    assert_eq!("Leipzig Hbf", result.stop_places[0].names.de.name_long);
+    assert_eq!(result.len(), 25, "limit was exceeded");
+    assert_eq!("8010205", result[0].eva_number, "first result should be leipzig hbf (eva)");
+    assert_eq!("Leipzig Hbf", result[0].names.de.name_long, "first result should be leipzig hbf (name)");
 }

@@ -129,6 +129,11 @@ impl From<RisOrRequestError> for RailboardApiError {
                 message: format!("Failed to get from Ris (through Zugportal): {err}"),
                 error: Some(UnderlyingApiError::ZugportalError(err)),
             },
+            RisOrRequestError::NotFoundError => RailboardApiError {
+                domain: ErrorDomain::Input,
+                message: "There was nothing found with these parameters".to_string(),
+                error: None,
+            }
         }
     }
 }

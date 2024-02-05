@@ -6,15 +6,11 @@ use axum::{
 };
 use chrono::{NaiveDate, TimeZone};
 use chrono_tz::Europe::Berlin;
-use ris_client::journey_search::RisJourneySearchElement;
 use serde::Deserialize;
 
-use crate::{
-    cache::{CachableObject, Cache},
-    error::RailboardResult,
-};
+use ris_client::journey_search::RisJourneySearchElement;
 
-use super::RisState;
+use crate::{cache::{CachableObject, Cache}, error::RailboardResult, SharedState};
 
 #[derive(Deserialize)]
 pub struct JounreySearchPath {
@@ -45,7 +41,7 @@ pub struct JounreySearchQuery {
 pub async fn journey_search(
     Path(path): Path<JounreySearchPath>,
     Query(query): Query<JounreySearchQuery>,
-    State(state): State<Arc<RisState>>,
+    State(state): State<Arc<SharedState>>,
 ) -> RailboardResult<Json<Vec<RisJourneySearchElement>>> {
     let category = path.category;
     let number = path.number;
@@ -81,7 +77,7 @@ pub async fn journey_search(
             let category = category.clone();
             let number = number.clone();
             (category, number, response)
-                .insert_to_cache(cache.clone().as_ref(), None)
+                .insert_to_cache(&cache, None)
                 .await
         });
     }

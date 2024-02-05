@@ -40,10 +40,9 @@ async fn journey_details() {
             )
         });
 
-    let event = journey_details
-        .events
+    let event = journey_details.stops
         .into_iter()
-        .find(|train| train.station.eva_number == "8000105")
+        .find(|train| train.stop_id == "8000105")
         .expect("Failed to get right station");
 
     assert_eq!(first.train.category, event.transport.category);

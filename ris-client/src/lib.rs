@@ -1,9 +1,12 @@
 use async_lock::Semaphore;
 
+mod helpers;
 mod error;
 pub use error::*;
 
 mod endpoints;
+mod request;
+
 pub use endpoints::*;
 
 pub struct RisClient {
@@ -23,7 +26,7 @@ impl RisClient {
         db_api_key: &str,
     ) -> Self {
         Self {
-            client: client.unwrap_or_else(reqwest::Client::new),
+            client: client.unwrap_or_default(),
             base_url: base_url.unwrap_or_else(|| String::from("https://apis.deutschebahn.com")),
             semaphore: Semaphore::new(concurrent_requests.unwrap_or(100)),
             db_client_id: db_client_id.to_string(),

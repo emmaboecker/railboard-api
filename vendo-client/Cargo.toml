@@ -35,4 +35,4 @@ version = '1.29.1'
 [package]
 edition = '2021'
 name = 'vendo-client'
-version = '0.1.0'
+version = '0.2.0'

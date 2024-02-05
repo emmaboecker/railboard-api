@@ -4,21 +4,17 @@ use axum::{
     extract::{Path, Query, State},
     Json,
 };
-use chrono::{DateTime, Duration, FixedOffset, TimeZone, Timelike};
+use chrono::{DateTime, Duration, FixedOffset, Timelike, TimeZone};
 use chrono_tz::{Europe::Berlin, Tz};
-use iris_client::{
-    station_board::{from_iris_timetable, response::TimeTable, IrisStationBoard},
-    IrisClient, IrisOrRequestError,
-};
 use serde::Deserialize;
 use utoipa::IntoParams;
 
-use crate::{
-    cache::{self, CachableObject, Cache},
-    error::RailboardResult,
+use iris_client::{
+    IrisClient,
+    IrisOrRequestError, station_board::{from_iris_timetable, IrisStationBoard, response::TimeTable},
 };
 
-use super::IrisState;
+use crate::{cache::{self, CachableObject, Cache}, error::RailboardResult, SharedState};
 
 #[derive(Deserialize, IntoParams)]
 pub struct IrisStationBoardQuery {
@@ -31,24 +27,24 @@ pub struct IrisStationBoardQuery {
 }
 
 #[utoipa::path(
-    get,
-    path = "/iris/v1/station_board/{eva}",
-    params(
-        ("eva" = String, Path, description = "The eva number of the Station you are requesting"),
-        IrisStationBoardQuery
-    ),
-    tag = "Iris",
-    responses(
-        (status = 200, description = "The requested Station Board", body = IrisStationBoard),
-        (status = 400, description = "The Error returned by Iris, will be the Iris Domain with UnderlyingApiError Variant 2, which has no Information because Iris doesn't return errors", body = RailboardApiError),
-        (status = 500, description = "The Error returned if the request or deserialization fails", body = RailboardApiError)
-    )
+get,
+path = "/iris/v1/station_board/{eva}",
+params(
+("eva" = String, Path, description = "The eva number of the Station you are requesting"),
+IrisStationBoardQuery
+),
+tag = "Iris",
+responses(
+(status = 200, description = "The requested Station Board", body = IrisStationBoard),
+(status = 400, description = "The Error returned by Iris, will be the Iris Domain with UnderlyingApiError Variant 2, which has no Information because Iris doesn't return errors", body = RailboardApiError),
+(status = 500, description = "The Error returned if the request or deserialization fails", body = RailboardApiError)
+)
 )]
 pub async fn station_board(
     Path(eva): Path<String>,
     Query(params): Query<IrisStationBoardQuery>,
-    State(state): State<Arc<IrisState>>,
-) -> RailboardResult<Json<iris_client::station_board::IrisStationBoard>> {
+    State(state): State<Arc<SharedState>>,
+) -> RailboardResult<Json<IrisStationBoard>> {
     let lookbehind = params.lookbehind.unwrap_or(20);
     let lookahead = params.lookahead.unwrap_or(180);
 
@@ -66,9 +62,9 @@ pub async fn station_board(
         lookahead,
         lookbehind,
         state.iris_client.clone(),
-        state.cache.clone(),
+        &state.cache,
     )
-    .await?;
+        .await?;
 
     Ok(Json(station_board))
 }
@@ -78,8 +74,8 @@ pub async fn iris_station_board(
     lookahead: DateTime<Tz>,
     lookbehind: DateTime<Tz>,
     iris_client: Arc<IrisClient>,
-    cache: Arc<cache::RedisCache>,
-) -> RailboardResult<iris_client::station_board::IrisStationBoard> {
+    cache: &cache::RedisCache,
+) -> RailboardResult<IrisStationBoard> {
     let mut dates = Vec::new();
 
     for current_date in DateRange(lookbehind, lookahead) {
@@ -87,11 +83,10 @@ pub async fn iris_station_board(
     }
 
     let (realtime, timetables) = tokio::join!(
-        get_realtime(iris_client.clone(), cache.clone(), eva),
+        get_realtime(iris_client.clone(), cache, eva),
         futures::future::join_all(dates.iter().map(|date| async {
             if let Some(cached) = cache
-                .as_ref()
-                .get_from_id::<iris_client::station_board::response::TimeTable>(&format!(
+                .get_from_id::<TimeTable>(&format!(
                     "iris.station-board.plan.{}.{}.{}",
                     eva,
                     date.format("%Y-%m-%d"),
@@ -119,7 +114,7 @@ pub async fn iris_station_board(
                     );
                     let cache = cache.clone();
                     tokio::spawn(async move {
-                        cache_timetable.insert_to_cache(cache.as_ref(), None).await
+                        cache_timetable.insert_to_cache(&cache, None).await
                     });
                     Ok(timetable)
                 }
@@ -186,11 +181,11 @@ impl Iterator for DateRange {
 
 async fn get_realtime(
     iris_client: Arc<IrisClient>,
-    cache: Arc<cache::RedisCache>,
+    cache: &cache::RedisCache,
     id: &str,
 ) -> Result<TimeTable, IrisOrRequestError> {
     if let Some(cached) = &cache
-        .get_from_id::<iris_client::station_board::response::TimeTable>(&format!(
+        .get_from_id::<TimeTable>(&format!(
             "iris.station-board.realtime.{}",
             id.to_owned()
         ))
@@ -204,9 +199,10 @@ async fn get_realtime(
         Ok(realtime) => {
             let realtime = realtime;
             let cache_realtime = (realtime.clone(), id.to_owned());
+            let cache = cache.clone();
             tokio::spawn(async move {
                 cache_realtime
-                    .insert_to_cache(cache.clone().as_ref(), None)
+                    .insert_to_cache(&cache, None)
                     .await
             });
             Ok(realtime)

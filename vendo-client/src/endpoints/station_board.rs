@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use chrono::{DateTime, TimeZone};
 use chrono_tz::{Europe::Berlin, Tz};
 use reqwest::{
@@ -10,11 +11,116 @@ use crate::VendoClient;
 use crate::{error::VendoError, VendoOrRequestError};
 
 mod request;
+pub mod response;
+mod transformed;
+
 pub use request::*;
-mod response;
-pub use response::*;
+pub use transformed::*;
+use crate::shared::Time;
+use crate::station_board::response::{StationBoardArrivalsElement, StationBoardArrivalsResponse, StationBoardDeparturesElement, StationBoardDeparturesResponse};
 
 impl VendoClient {
+    pub async fn station_board(
+        &self,
+        id: &str,
+        date: DateTime<Tz>,
+    ) -> Result<VendoStationBoard, VendoOrRequestError> {
+        let (arrivals, departures) = tokio::join!(
+        self
+            .station_board_arrivals(id, Some(date), None),
+        self
+            .station_board_departures(id, Some(date), None)
+    );
+
+        let arrivals = arrivals?;
+        let departures = departures?;
+
+        let mut trains: BTreeMap<
+            String,
+            (
+                Option<StationBoardArrivalsElement>,
+                Option<StationBoardDeparturesElement>,
+            ),
+        > = BTreeMap::new();
+
+        for train in arrivals.arrivals {
+            let id = train.id.clone();
+            trains.entry(id).or_insert_with(|| (None, None)).0 = Some(train);
+        }
+
+        for train in departures.departures {
+            let id = train.id.clone();
+            trains.entry(id).or_insert_with(|| (None, None)).1 = Some(train);
+        }
+
+        let mut trains: Vec<StationBoardElement> = trains
+            .into_iter()
+            .map(|(id, (arrival, departure))| {
+                let arrival_data = arrival.as_ref().map(|arrival| StationBoardArrival {
+                    origin: arrival.origin_name.clone(),
+                    time: Time {
+                        scheduled: arrival.arrival_date,
+                        realtime: arrival.realtime_arrival_date,
+                    },
+                });
+                let departure_data = departure.as_ref().map(|departure| StationBoardDeparture {
+                    destination: departure.destination_name.clone(),
+                    time: Time {
+                        scheduled: departure.departure_date,
+                        realtime: departure.realtime_departure_date,
+                    },
+                });
+
+                if let Some(departure) = departure {
+                    StationBoardElement {
+                        journey_id: id,
+                        arrival: arrival_data,
+                        departure: departure_data,
+                        product_type: departure.product_type,
+                        short_name: departure.short_name,
+                        name: departure.name,
+                        scheduled_platform: departure.platform,
+                        realtime_platform: departure.realtime_platform,
+                        notes: departure.notes.into_iter().map(|note| note.text).collect(),
+                    }
+                } else if let Some(arrival) = arrival {
+                    StationBoardElement {
+                        journey_id: id,
+                        arrival: arrival_data,
+                        departure: departure_data,
+
+                        product_type: arrival.product_type,
+                        short_name: arrival.short_name,
+                        name: arrival.name,
+                        scheduled_platform: arrival.platform,
+                        realtime_platform: arrival.realtime_platform,
+                        notes: arrival.notes.into_iter().map(|note| note.text).collect(),
+                    }
+                } else {
+                    panic!("Arrival and departure are both None"); // This should never happen (it is just simply not possible)
+                }
+            })
+            .collect();
+
+        trains.sort_by(|a, b| {
+            let a_dep = a.departure.clone().map(|departure| departure.time);
+            let a_arr = a.arrival.clone().map(|arrival| arrival.time);
+            let b_dep = b.departure.clone().map(|departure| departure.time);
+            let b_arr = b.arrival.clone().map(|arrival| arrival.time); // I need to remove these clones but I don't know how
+            a_dep
+                .unwrap_or_else(|| a_arr.unwrap())
+                .scheduled
+                .cmp(&b_dep.unwrap_or_else(|| b_arr.unwrap()).scheduled)
+        });
+
+        Ok(VendoStationBoard {
+            day: date.format("%Y-%m-%d").to_string(),
+            time: date.format("%H:%M").to_string(),
+            id: id.to_string(),
+            station_board: trains,
+        })
+    }
+
     /// Get the arrival station board for a station at a specific date.
     ///
     /// The station should be given in the as the eva number (e.G. `8000105`) \

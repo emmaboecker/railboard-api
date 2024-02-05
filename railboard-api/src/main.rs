@@ -2,110 +2,110 @@ use std::sync::Arc;
 
 use axum::{Router, Server};
 use dotenvy::dotenv;
-use tracing::metadata::LevelFilter;
-use tracing_subscriber::{fmt, prelude::*, EnvFilter};
-use utoipa::OpenApi;
-use utoipa_swagger_ui::SwaggerUi;
+use reqwest::{Certificate, Client, Proxy};
 #[cfg(unix)]
 use tokio::signal::unix::SignalKind;
+use tracing::metadata::LevelFilter;
+use tracing_subscriber::{EnvFilter, fmt, prelude::*};
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
+
+use iris_client::IrisClient;
+use ris_client::RisClient;
+use vendo_client::VendoClient;
+
+use crate::cache::RedisCache;
 
 pub mod cache;
 pub mod error;
-pub mod types;
 
 pub mod iris;
-pub mod ris; 
+pub mod ris;
 pub mod vendo;
-pub mod custom; 
-
-mod helpers; 
-
-pub use helpers::*;
+pub mod custom;
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(
-        vendo::station_board::station_board,
-        vendo::location_search::location_search, 
-        vendo::journey_details::journey_details,
-        iris::station_board::station_board,
-        ris::journey_search::journey_search,
-        ris::journey_details::journey_details,
-        ris::station_board::station_board,
-        ris::station_information::station_information,
-        ris::station_search_by_name::station_search_by_name,
-        custom::station_board::station_board,
-    ),
-    components(schemas(
-        error::RailboardApiError,
-        error::ErrorDomain,
-        error::UnderlyingApiError,
-        // Vendo stuff
-        types::Time,
-        types::Notice,
-        types::HimNotice,
-        types::Attribute,
-        vendo_client::VendoError,
-        vendo::station_board::StationBoard,
-        vendo::station_board::StationBoardElement,
-        vendo::station_board::StationBoardArrival,
-        vendo::station_board::StationBoardDeparture,
-        vendo_client::location_search::LocationSearchResult,
-        vendo_client::location_search::LocationSearchCoordinates,
-        vendo::journey_details::JourneyDetails,
-        vendo::journey_details::TrainSchedule,
-        vendo::journey_details::Stop,
-        // Iris stuff
-        iris_client::station_board::IrisStationBoard,
-        iris_client::station_board::StationBoardStop,
-        iris_client::station_board::StationBoardStopArrival,
-        iris_client::station_board::StationBoardStopDeparture,
-        iris_client::station_board::RouteStop,
-        iris_client::station_board::ReplacedTrain,
-        iris_client::station_board::message::Message,
-        iris_client::station_board::message::MessageStatus,
-        iris_client::station_board::message::MessagePriority,
-        // Ris stuff
-        ris_client::RisError,
-        ris_client::RisUnauthorizedError,
-        ris_client::ZugportalError,
-        ris_client::journey_search::RisJourneySearchElement,
-        ris_client::journey_search::RisJourneySearchSchedule,
-        ris_client::journey_search::RisJourneySearchTransport,
-        ris::journey_details::RisJourneyDetails,
-        ris::journey_details::RisJourneyStop,
-        ris_client::journey_details::JourneyDetailsMessage,
-        ris_client::journey_details::Transport,
-        ris_client::journey_details::ReplacementTransport,
-        ris::journey_details::JourneyStopEvent,
-        ris::journey_details::JourneyStopAdministration,
-        ris::journey_details::JourneyStopDisruption,
-        ris::station_board::RisStationBoard,
-        ris::station_board::RisStationBoardItem,
-        ris::station_board::RisStationBoardItemAdministration,
-        ris::station_board::DepartureArrival,
-        ris::station_information::StationInformation,
-        ris::station_information::StationNameContent,
-        ris::station_information::Position,
-        ris::station_information::Position,
-        ris_client::station_search::RisStationSearchResponse,
-        ris_client::station_search::StationSearchResponse,
-        ris_client::station_information::Translatable<ris_client::station_information::StationNameContent>,
-        ris_client::station_information::StationNameContent,
-        // Custom stuff
-        custom::station_board::StationBoard,
-        custom::station_board::StationBoardItem,
-        custom::station_board::StationBoardItemAdministration,
-        custom::station_board::DepartureArrival,
-        custom::station_board::IrisInformation,
-        
-    )),
-    tags(
-        (name = "Iris", description = "API using the Iris API as Backend"),
-        (name = "Ris", description = "API using the Ris API as Backend"),
-        (name = "Custom", description = "API not using a single API as Backend, but rather a combination of multiple sources"),
-        (name = "Vendo", description = "API using the Vendo API as Backend"),
-    )
+paths(
+vendo::station_board::station_board,
+vendo::location_search::location_search,
+vendo::journey_details::journey_details,
+iris::station_board::station_board,
+ris::journey_search::journey_search,
+ris::journey_details::journey_details,
+ris::station_board::station_board,
+ris::station_information::station_information,
+ris::station_search_by_name::station_search_by_name,
+custom::station_board::station_board,
+),
+components(schemas(
+error::RailboardApiError,
+error::ErrorDomain,
+error::UnderlyingApiError,
+// Vendo stuff
+vendo_client::VendoError,
+vendo_client::shared::Time,
+vendo_client::shared::Notice,
+vendo_client::shared::HimNotice,
+vendo_client::shared::Attribute,
+vendo_client::station_board::VendoStationBoard,
+vendo_client::station_board::StationBoardElement,
+vendo_client::station_board::StationBoardArrival,
+vendo_client::station_board::StationBoardDeparture,
+vendo_client::location_search::VendoLocationSearchResult,
+vendo_client::location_search::VendoLocationSearchCoordinates,
+vendo_client::journey_details::VendoJourneyDetails,
+vendo_client::journey_details::VendoTrainSchedule,
+vendo_client::journey_details::VendoStop,
+// Iris stuff
+iris_client::station_board::IrisStationBoard,
+iris_client::station_board::StationBoardStop,
+iris_client::station_board::StationBoardStopArrival,
+iris_client::station_board::StationBoardStopDeparture,
+iris_client::station_board::RouteStop,
+iris_client::station_board::ReplacedTrain,
+iris_client::station_board::message::Message,
+iris_client::station_board::message::MessageStatus,
+iris_client::station_board::message::MessagePriority,
+// Ris stuff
+ris_client::RisError,
+ris_client::RisUnauthorizedError,
+ris_client::ZugportalError,
+ris_client::journey_search::RisJourneySearchElement,
+ris_client::journey_search::RisJourneySearchSchedule,
+ris_client::journey_search::RisJourneySearchTransport,
+ris_client::journey_details::RisJourneyDetails,
+ris_client::journey_details::RisJourneyStop,
+ris_client::journey_details::RisJourneyStopEvent,
+ris_client::journey_details::RisJourneyStopAdministration,
+ris_client::journey_details::RisJourneyStopDisruption,
+ris_client::journey_details::RisTransport,
+ris_client::journey_details::RisReplacementTransport,
+ris_client::journey_details::RisJourneyDetailsMessage,
+ris_client::station_board::RisStationBoard,
+ris_client::station_board::RisStationBoardItem,
+ris_client::station_board::RisStationBoardItemAdministration,
+ris_client::station_board::DepartureArrival,
+ris_client::station_information::RisStationInformation,
+ris_client::station_information::RisStationNameContent,
+ris_client::station_information::RisPosition,
+ris_client::station_search::RisStationSearchResponse,
+ris_client::station_search::RisStationSearchElement,
+ris_client::station_search::RisStationSearchTranslatable,
+ris_client::station_search::RisStationSearchNameContent,
+// Custom stuff
+custom::station_board::StationBoard,
+custom::station_board::StationBoardItem,
+custom::station_board::StationBoardItemAdministration,
+custom::station_board::DepartureArrival,
+custom::station_board::IrisInformation,
+)),
+tags(
+(name = "Iris", description = "API using the Iris API as Backend"),
+(name = "Ris", description = "API using the Ris API as Backend"),
+(name = "Custom", description = "API not using a single API as Backend, but rather a combination of multiple sources"),
+(name = "Vendo", description = "API using the Vendo API as Backend"),
+)
 )]
 struct ApiDoc;
 
@@ -123,13 +123,10 @@ async fn main() {
         .init();
 
     let redis_client = {
-        let redis_url = match std::env::var("REDIS_URL") {
-            Ok(url) => url,
-            Err(_) => {
-                tracing::warn!("caching is enabled and REDIS_URL env variable is not set. Using default \"redis://127.0.0.1/\"");
-                String::from("redis://127.0.0.1/")
-            }
-        };
+        let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| {
+            tracing::warn!("REDIS_URL env variable is not set. Using default \"redis://127.0.0.1/\"");
+            String::from("redis://127.0.0.1/")
+        });
         redis::Client::open(redis_url).expect("Failed create redis client, check redis url")
     };
 
@@ -138,19 +135,50 @@ async fn main() {
     let ris_api_key = std::env::var("RIS_API_KEY").expect("RIS_API_KEY env variable is not set");
     let ris_client_id = std::env::var("RIS_CLIENT_ID").expect("RIS_CLIENT_ID env variable is not set");
 
+    let http_client =
+        Client::builder()
+            // .add_root_certificate(Certificate::from_pem(include_bytes!("../../mitm.pem")).unwrap())
+            // .proxy(Proxy::all("http://localhost:8080").unwrap())
+            .build()
+            .unwrap();
+
+    let ris_client = Arc::new(RisClient::new(
+        Some(http_client.clone()),
+        None,
+        None,
+        &ris_client_id,
+        &ris_api_key,
+    ));
+
+    let iris_client = Arc::new(IrisClient::new(Some(http_client.clone()), None, None));
+
+    let vendo_client = Arc::new(VendoClient::new(Some(http_client.clone()), None, None));
+
     let app = Router::new()
         .merge(SwaggerUi::new("/docs").url("/openapi.json", ApiDoc::openapi()))
-        .nest("/vendo/v1", vendo::router(redis_client.clone()))
-        .nest("/iris/v1", iris::router(redis_client.clone()))
-        .nest("/ris/v1", ris::router(redis_client.clone(), &ris_client_id, &ris_api_key))
-        .nest("/v1", custom::router(redis_client.clone(), &ris_client_id, &ris_api_key))
+        .nest("/vendo/v1", vendo::router())
+        .nest("/iris/v1", iris::router())
+        .nest("/ris/v1", ris::router())
+        .nest("/v1", custom::router()).with_state(Arc::new(SharedState {
+        vendo_client,
+        ris_client,
+        iris_client,
+        cache: RedisCache::new(redis_client),
+    }))
         .fallback(|| async { "Nothing here :/" });
-    
+
     let bind_addr = std::env::var("API_URL").unwrap_or_else(|_| String::from("0.0.0.0:8080"));
 
     let server = Server::bind(&bind_addr.parse().unwrap()).serve(app.into_make_service()).with_graceful_shutdown(shutdown_hook());
     tracing::info!("Listening on {}", bind_addr);
     server.await.unwrap();
+}
+
+pub struct SharedState {
+    vendo_client: Arc<VendoClient>,
+    ris_client: Arc<RisClient>,
+    iris_client: Arc<IrisClient>,
+    cache: RedisCache,
 }
 
 async fn shutdown_hook() {

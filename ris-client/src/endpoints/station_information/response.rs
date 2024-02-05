@@ -8,7 +8,7 @@ pub struct StationInformationResponse {
     pub stations: Vec<StationInformation>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct StationInformation {
     pub eva_number: String,

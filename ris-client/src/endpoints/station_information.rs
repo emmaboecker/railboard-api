@@ -1,13 +1,17 @@
-mod response;
-pub use response::*;
+pub use transformed::*;
 
 use crate::{RisClient, RisOrRequestError};
+use crate::request::ResponseOrRisError;
+use crate::station_information::response::StationInformationResponse;
+
+pub(crate) mod response;
+mod transformed;
 
 impl RisClient {
     pub async fn station_information(
         &self,
         eva: &str,
-    ) -> Result<StationInformationResponse, RisOrRequestError> {
+    ) -> Result<Option<RisStationInformation>, RisOrRequestError> {
         let _permit = self.semaphore.acquire().await;
 
         let url = format!(
@@ -15,7 +19,7 @@ impl RisClient {
             self.base_url
         );
 
-        let response = self
+        let response: ResponseOrRisError<StationInformationResponse> = self
             .client
             .get(&url)
             .header("db-api-key", &self.db_api_key)
@@ -25,6 +29,18 @@ impl RisClient {
             .json()
             .await?;
 
-        Ok(response)
+        match response {
+            ResponseOrRisError::Response(response) => {
+                let station = response.stations.into_iter().next().map(|i| i.into());
+
+                Ok(station)
+            },
+            ResponseOrRisError::Error(error) => {
+                Err(RisOrRequestError::RisError(error))
+            }
+            ResponseOrRisError::UnauthorizedError(error) => {
+                Err(RisOrRequestError::RisUnauthorizedError(error))
+            }
+        }
     }
 }

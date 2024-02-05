@@ -1,14 +1,16 @@
-mod response;
 pub use response::*;
 
 use crate::{RisClient, RisOrRequestError};
+use crate::request::ResponseOrRisError;
+
+mod response;
 
 impl RisClient {
     pub async fn station_search_by_name(
         &self,
         query: &str,
         limit: Option<u32>,
-    ) -> Result<RisStationSearchResponse, RisOrRequestError> {
+    ) -> Result<Vec<RisStationSearchElement>, RisOrRequestError> {
         let _permit = self.semaphore.acquire().await;
 
         let limit = limit.unwrap_or(25);
@@ -18,7 +20,7 @@ impl RisClient {
             self.base_url
         );
 
-        let response = self
+        let response: ResponseOrRisError<RisStationSearchResponse> = self
             .client
             .get(&url)
             .query(&[("limit", format!("{}", limit))])
@@ -29,6 +31,15 @@ impl RisClient {
             .json()
             .await?;
 
-        Ok(response)
+        match response {
+            ResponseOrRisError::Response(response) => Ok(response.stop_places),
+            ResponseOrRisError::Error(error) => {
+                Err(RisOrRequestError::RisError(error))
+            }
+            ResponseOrRisError::UnauthorizedError(error) => {
+                Err(RisOrRequestError::RisUnauthorizedError(error))
+            }
+        }
     }
 }
+

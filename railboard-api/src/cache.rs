@@ -5,21 +5,16 @@ use chrono_tz::Europe::Berlin;
 use iris_client::station_board::response::TimeTable;
 use redis::JsonAsyncCommands;
 use ris_client::{
-    journey_search::RisJourneySearchResponse, station_search::RisStationSearchResponse,
+    journey_search::RisJourneySearchResponse, station_search::RisStationSearchElement,
 };
 use serde::{de::DeserializeOwned, Serialize};
 use thiserror::Error;
-
-use crate::{
-    ris::{
-        journey_details::RisJourneyDetails, station_board::RisStationBoard,
-        station_information::StationInformation,
-    },
-    vendo::{
-        journey_details::JourneyDetails, location_search::LocationSearchCache,
-        station_board::StationBoard,
-    },
-};
+use ris_client::journey_details::RisJourneyDetails;
+use ris_client::station_board::RisStationBoard;
+use ris_client::station_information::RisStationInformation;
+use vendo_client::journey_details::VendoJourneyDetails;
+use vendo_client::station_board::VendoStationBoard;
+use crate::vendo::location_search::LocationSearchCache;
 
 #[async_trait::async_trait]
 pub trait Cache: Sync + Send {
@@ -43,6 +38,7 @@ pub enum CacheInsertError {
     RedisError(#[from] redis::RedisError),
 }
 
+#[derive(Clone)]
 pub struct RedisCache {
     pub redis_client: Arc<redis::Client>,
 }
@@ -132,7 +128,7 @@ pub trait CachableObject {
 }
 
 #[async_trait::async_trait]
-impl CachableObject for StationBoard {
+impl CachableObject for VendoStationBoard {
     async fn insert_to_cache<C: Cache>(
         &self,
         cache: &C,
@@ -158,7 +154,7 @@ impl CachableObject for LocationSearchCache {
 }
 
 #[async_trait::async_trait]
-impl CachableObject for JourneyDetails {
+impl CachableObject for VendoJourneyDetails {
     async fn insert_to_cache<C: Cache>(
         &self,
         cache: &C,
@@ -253,7 +249,7 @@ impl CachableObject for RisStationBoard {
 }
 
 #[async_trait::async_trait]
-impl CachableObject for StationInformation {
+impl CachableObject for RisStationInformation {
     async fn insert_to_cache<C: Cache>(
         &self,
         cache: &C,
@@ -266,14 +262,14 @@ impl CachableObject for StationInformation {
 }
 
 #[async_trait::async_trait]
-impl CachableObject for RisStationSearchResponse {
+impl CachableObject for Vec<RisStationSearchElement> {
     async fn insert_to_cache<C: Cache>(
         &self,
         cache: &C,
         information: Option<&str>,
     ) -> Result<(), CacheInsertError> {
-        let key = format!("ris.station_search_by_name.{}", information.unwrap_or(""));
+        let key = format!("ris.station-search-by-name.{}", information.unwrap_or(""));
 
-        cache.insert_to_cache(key, &self, 180).await
+        cache.insert_to_cache(key, &self, 60 * 60).await
     }
 }

@@ -4,6 +4,8 @@ mod error;
 pub use error::*;
 
 mod endpoints;
+pub mod shared;
+
 pub use endpoints::*;
 
 pub struct VendoClient {
@@ -16,7 +18,7 @@ impl Default for VendoClient {
     fn default() -> Self {
         Self {
             client: reqwest::Client::new(),
-            base_url: String::from("https://app.vendo.noncd.db.de/"),
+            base_url: String::from("https://app.vendo.noncd.db.de"),
             semaphore: Semaphore::new(100),
         }
     }
@@ -29,8 +31,8 @@ impl VendoClient {
         concurrent_requests: Option<usize>,
     ) -> Self {
         Self {
-            client: client.unwrap_or_else(reqwest::Client::new),
-            base_url: base_url.unwrap_or_else(|| String::from("https://app.vendo.noncd.db.de/")),
+            client: client.unwrap_or_default(),
+            base_url: base_url.unwrap_or_else(|| String::from("https://app.vendo.noncd.db.de")),
             semaphore: Semaphore::new(concurrent_requests.unwrap_or(100)),
         }
     }

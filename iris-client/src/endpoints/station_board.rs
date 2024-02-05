@@ -112,7 +112,7 @@ impl IrisClient {
 
     /// Get all planned information IRIS has for a specific station at the specified date + hour.
     ///
-    /// From experience IRIS does not have any more planned data than the current day + maybe a bit of the early hours of the next day.
+    /// From experience IRIS does not have more planned data than the current day + maybe a bit of the early hours of the next day.
     ///
     /// **Consider using [`station_board`](IrisClient::station_board) instead.** \
     ///

@@ -8,7 +8,7 @@ pub struct JourneyDetailsResponse {
     #[serde(rename = "mitteltext")]
     pub name: String,
     #[serde(rename = "langtext")]
-    pub long_name: String,
+    pub long_name: Option<String>,
     #[serde(rename = "richtung")]
     pub destination: String,
 
@@ -84,5 +84,6 @@ pub struct JourneyDetailsHimNotice {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JourneyDetailsAttribute {
     pub text: String,
+    pub priority: Option<u32>,
     pub key: String,
 }

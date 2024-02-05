@@ -4,18 +4,14 @@ use axum::{
     extract::{Path, Query, State},
     Json,
 };
-use chrono::{DateTime, Datelike, FixedOffset, TimeZone, Utc};
+use chrono::{Datelike, DateTime, FixedOffset, TimeZone, Utc};
 use chrono_tz::Europe::Berlin;
-use iris_client::station_board::{message::Message, IrisStationBoard, RouteStop};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use crate::{
-    error::RailboardResult, iris::station_board::iris_station_board,
-    ris::station_board::ris_station_board,
-};
+use iris_client::station_board::{IrisStationBoard, message::Message, RouteStop};
 
-use super::CustomEndpointState;
+use crate::{error::RailboardResult, iris::station_board::iris_station_board, SharedState};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -25,24 +21,24 @@ pub struct StationBoardQuery {
 }
 
 #[utoipa::path(
-    get,
-    path = "/v1/station_board/{eva}",
-    params(
-        ("eva" = String, Path, description = "The Eva Number of the Station you are requesting"),
-        ("timeStart" = Option<DateTime<FixedOffset>>, Query, description = "The Start Time of the Time Range you are requesting"),
-        ("timeEnd" = Option<DateTime<FixedOffset>>, Query, description = "The End Time of the Time Range you are requesting")
-    ),
-    tag = "Custom",
-    responses(
-        (status = 200, description = "The requested Station Board", body = StationBoard),
-        (status = 400, description = "The Error returned by the Ris or Iris, will be Variant 2 or Variant 5", body = RailboardApiError),
-        (status = 500, description = "The Error returned if the request or deserialization fails, will be domain Request", body = RailboardApiError)
-    )
+get,
+path = "/v1/station_board/{eva}",
+params(
+("eva" = String, Path, description = "The Eva Number of the Station you are requesting"),
+("timeStart" = Option < DateTime < FixedOffset >>, Query, description = "The Start Time of the Time Range you are requesting"),
+("timeEnd" = Option < DateTime < FixedOffset >>, Query, description = "The End Time of the Time Range you are requesting")
+),
+tag = "Custom",
+responses(
+(status = 200, description = "The requested Station Board", body = StationBoard),
+(status = 400, description = "The Error returned by the Ris or Iris, will be Variant 2 or Variant 5", body = RailboardApiError),
+(status = 500, description = "The Error returned if the request or deserialization fails, will be domain Request", body = RailboardApiError)
+)
 )]
 pub async fn station_board(
     Path(eva): Path<String>,
     Query(query): Query<StationBoardQuery>,
-    State(state): State<Arc<CustomEndpointState>>,
+    State(state): State<Arc<SharedState>>,
 ) -> RailboardResult<Json<StationBoard>> {
     let time_start = if let Some(time_start) = query.time_start {
         Berlin.from_utc_datetime(&time_start.naive_utc())
@@ -57,19 +53,17 @@ pub async fn station_board(
     };
 
     let (ris_station_board, iris_station_board) = tokio::join!(
-        ris_station_board(
+        state.ris_client.station_board(
             &eva,
             Some(time_start),
             Some(time_end),
-            state.ris_client.clone(),
-            state.cache.clone()
         ),
         iris_station_board(
             &eva,
             time_end,
             time_start,
             state.iris_client.clone(),
-            state.cache.clone()
+            &state.cache
         )
     );
 
@@ -92,18 +86,18 @@ pub async fn station_board(
                         iris_item.train_number == item.train_number.to_string()
                             && iris_item.train_type == item.category
                             && (iris_item
-                                .arrival
-                                .clone()
-                                .map(|arrival| arrival.planned_time.naive_utc().date().day())
-                                == item
-                                    .arrival
-                                    .clone()
-                                    .map(|arrival| arrival.time_scheduled.naive_utc().date().day())
-                                || iris_item.departure.clone().map(|departure| {
-                                    departure.planned_time.naive_utc().date().day()
-                                }) == item.departure.clone().map(|departure| {
-                                    departure.time_scheduled.naive_utc().date().day()
-                                }))
+                            .arrival
+                            .clone()
+                            .map(|arrival| arrival.planned_time.naive_utc().date().day())
+                            == item
+                            .arrival
+                            .clone()
+                            .map(|arrival| arrival.time_scheduled.naive_utc().date().day())
+                            || iris_item.departure.clone().map(|departure| {
+                            departure.planned_time.naive_utc().date().day()
+                        }) == item.departure.clone().map(|departure| {
+                            departure.time_scheduled.naive_utc().date().day()
+                        }))
                     });
 
                 let iris_item = iris_item.cloned();
@@ -176,13 +170,13 @@ pub async fn station_board(
             })
             .unwrap_or(false)
             || stop
-                .departure
-                .as_ref()
-                .map(|departure| {
-                    departure.planned_time.naive_utc() >= time_start.naive_utc()
-                        && departure.planned_time.naive_utc() <= time_end.naive_utc()
-                })
-                .unwrap_or(false)
+            .departure
+            .as_ref()
+            .map(|departure| {
+                departure.planned_time.naive_utc() >= time_start.naive_utc()
+                    && departure.planned_time.naive_utc() <= time_end.naive_utc()
+            })
+            .unwrap_or(false)
     }) {
         if !items
             .iter()

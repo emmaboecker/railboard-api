@@ -3,8 +3,8 @@ use utoipa::ToSchema;
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct LocationSearchResult {
-    pub coordinates: LocationSearchCoordinates,
+pub struct VendoLocationSearchResult {
+    pub coordinates: VendoLocationSearchCoordinates,
     #[schema(nullable)]
     pub eva_nr: Option<String>,
     pub location_id: String,
@@ -17,7 +17,7 @@ pub struct LocationSearchResult {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
-pub struct LocationSearchCoordinates {
+pub struct VendoLocationSearchCoordinates {
     pub latitude: f64,
     pub longitude: f64,
 }

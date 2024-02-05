@@ -1,9 +1,11 @@
-use crate::{RisClient, RisError, RisOrRequestError, RisUnauthorizedError};
+use chrono::NaiveDate;
+
+pub use response::*;
+
+use crate::{RisClient, RisOrRequestError};
+use crate::request::ResponseOrRisError;
 
 mod response;
-use chrono::NaiveDate;
-pub use response::*;
-use serde::Deserialize;
 
 impl RisClient {
     pub async fn journey_search(
@@ -26,7 +28,7 @@ impl RisClient {
             query.push(("date", date));
         }
 
-        let response: RisJourneySearchOrErrorResponse = self
+        let response: ResponseOrRisError<RisJourneySearchResponse> = self
             .client
             .get(&url)
             .query(&query)
@@ -38,21 +40,13 @@ impl RisClient {
             .await?;
 
         match response {
-            RisJourneySearchOrErrorResponse::Response(response) => Ok(*response),
-            RisJourneySearchOrErrorResponse::Error(error) => {
+            ResponseOrRisError::Response(response) => Ok(*response),
+            ResponseOrRisError::Error(error) => {
                 Err(RisOrRequestError::RisError(error))
             }
-            RisJourneySearchOrErrorResponse::UnauthorizedError(error) => {
+            ResponseOrRisError::UnauthorizedError(error) => {
                 Err(RisOrRequestError::RisUnauthorizedError(error))
             }
         }
     }
-}
-
-#[derive(Deserialize, Debug)]
-#[serde(untagged)]
-enum RisJourneySearchOrErrorResponse {
-    Response(Box<RisJourneySearchResponse>),
-    Error(RisError),
-    UnauthorizedError(RisUnauthorizedError),
 }

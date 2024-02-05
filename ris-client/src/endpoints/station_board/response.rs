@@ -6,8 +6,8 @@ use utoipa::ToSchema;
 #[serde(rename_all = "camelCase")]
 pub struct StationBoardResponse {
     pub is_arrival: bool,
-    pub eva_no: String,
-    pub station_name: String,
+    pub eva_no: Option<String>,
+    pub station_name: Option<String>,
     pub time_start: DateTime<FixedOffset>,
     pub time_end: DateTime<FixedOffset>,
     pub items: Vec<StationBoardItem>,

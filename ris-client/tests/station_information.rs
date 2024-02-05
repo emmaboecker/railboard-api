@@ -14,11 +14,11 @@ async fn station_information() {
 
     let result = result.expect("Failed to get Station Information");
 
-    let first = result.stations.first();
+    let first = result;
     assert!(first.is_some(), "No stations in response");
 
     let first = first.unwrap();
 
-    assert_eq!(first.eva_number, "8000105", "Wrong EVA number");
-    assert_eq!(first.names.de.name_long, "Frankfurt(Main)Hbf", "Wrong Name");
+    assert_eq!(first.eva, "8000105", "Wrong EVA number");
+    assert_eq!(first.names.name_long, "Frankfurt(Main)Hbf", "Wrong Name");
 }

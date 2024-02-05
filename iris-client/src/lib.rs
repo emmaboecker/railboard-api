@@ -31,7 +31,7 @@ impl IrisClient {
         concurrent_requests: Option<usize>,
     ) -> Self {
         Self {
-            client: client.unwrap_or_else(reqwest::Client::new),
+            client: client.unwrap_or_default(),
             base_url: base_url.unwrap_or_else(|| String::from("https://iris.noncd.db.de")),
             semaphore: Semaphore::new(concurrent_requests.unwrap_or(100)),
         }

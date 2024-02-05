@@ -46,6 +46,8 @@ pub enum RisOrRequestError {
     RisUnauthorizedError(#[from] RisUnauthorizedError),
     #[error("The Ris request through Zugportal returned an error.")]
     ZugportalError(#[from] ZugportalError),
+    #[error("There was nothing found with these parameters")]
+    NotFoundError,
     #[error(transparent)]
     FailedRequest(#[from] reqwest::Error),
 }
