@@ -3,11 +3,12 @@ use std::num::ParseIntError;
 use axum::{response::IntoResponse, Json};
 use iris_client::IrisOrRequestError;
 use reqwest::StatusCode;
-use ris_client::{RisError, RisOrRequestError, RisUnauthorizedError, ZugportalError};
+use ris_client::{RisError, RisOrRequestError, RisUnauthorizedError};
 use serde::{Deserialize, Serialize};
 
 use utoipa::ToSchema;
 use vendo_client::{VendoError, VendoOrRequestError};
+use zugportal_client::error::ZugportalError;
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct RailboardApiError {
@@ -23,6 +24,7 @@ pub enum ErrorDomain {
     Vendo,
     Iris,
     Ris,
+    Zugportal,
     Input,
     Request,
 }
@@ -42,7 +44,7 @@ pub enum UnderlyingApiError {
     ZugportalError(ZugportalError),
 }
 
-pub type RailboardResult<T> = std::result::Result<T, RailboardApiError>;
+pub type RailboardResult<T> = Result<T, RailboardApiError>;
 
 impl IntoResponse for RailboardApiError {
     fn into_response(self) -> axum::response::Response {
@@ -51,6 +53,7 @@ impl IntoResponse for RailboardApiError {
             ErrorDomain::Iris => StatusCode::BAD_REQUEST,
             ErrorDomain::Ris => StatusCode::BAD_REQUEST,
             ErrorDomain::Input => StatusCode::BAD_REQUEST,
+            ErrorDomain::Zugportal => StatusCode::INTERNAL_SERVER_ERROR,
             ErrorDomain::Request => StatusCode::INTERNAL_SERVER_ERROR,
         };
         (code, Json(self)).into_response()
@@ -123,11 +126,6 @@ impl From<RisOrRequestError> for RailboardApiError {
                 domain: ErrorDomain::Ris,
                 message: format!("The underlying request to ris was unauthorized: {err}"),
                 error: Some(UnderlyingApiError::RisUnauthorizedError(err)),
-            },
-            RisOrRequestError::ZugportalError(err) => RailboardApiError {
-                domain: ErrorDomain::Ris,
-                message: format!("Failed to get from Ris (through Zugportal): {err}"),
-                error: Some(UnderlyingApiError::ZugportalError(err)),
             },
             RisOrRequestError::NotFoundError => RailboardApiError {
                 domain: ErrorDomain::Input,

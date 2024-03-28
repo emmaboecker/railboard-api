@@ -3,6 +3,6 @@ members = [
     'railboard-api',
     'vendo-client',
     'iris-client',
-    'ris-client',
+    'ris-client', "zugportal-client",
 ]
 resolver = '2'

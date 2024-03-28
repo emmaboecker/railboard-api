@@ -7,7 +7,6 @@ use axum::{
 use chrono::{DateTime, FixedOffset, TimeZone};
 use chrono_tz::Europe::Berlin;
 use serde::Deserialize;
-use ris_client::station_board::RisStationBoard;
 
 use zugportal_client::station_board::ZugportalStationBoard;
 
@@ -22,24 +21,25 @@ pub struct StationBoardQuery {
 
 #[utoipa::path(
 get,
-path = "/ris/v2/station_board/{eva}",
+path = "/ris/v1/station_board/{eva}",
 params(
 ("eva" = String, Path, description = "The Eva Number of the Station you are requesting"),
-("timeStart" = Option<String>, Query, description = "The Start Time of the Time Range you are requesting"),
-("timeEnd" = Option<String>, Query, description = "The End Time of the Time Range you are requesting")
+("timeStart" = Option < String >, Query, description = "The Start Time of the Time Range you are requesting"),
+("timeEnd" = Option < String >, Query, description = "The End Time of the Time Range you are requesting")
 ),
-tag = "Ris",
+tag = "Zugportal",
 responses(
 (status = 200, description = "The requested Station Board", body = RisStationBoard),
 (status = 400, description = "The Error returned by the Zugportal API (Ris), will be the Ris Domain with UnderlyingApiError Variant 5", body = RailboardApiError),
 (status = 500, description = "The Error returned if the request or deserialization fails, will be domain Request", body = RailboardApiError)
 )
 )]
-pub async fn ris_station_board(
+#[deprecated]
+pub async fn zugportal_station_board(
     Path(eva): Path<String>,
     Query(query): Query<StationBoardQuery>,
     State(state): State<Arc<SharedState>>,
-) -> RailboardResult<Json<RisStationBoard>> {
+) -> RailboardResult<Json<ZugportalStationBoard>> {
     let time_start = query
         .time_start
         .map(|time_start| Berlin.from_utc_datetime(&time_start.naive_utc()));
@@ -51,7 +51,7 @@ pub async fn ris_station_board(
     if let (Some(time_start), Some(time_end)) = (time_start, time_end) {
         if let Some(cached) = state.cache
             .get_from_id(&format!(
-                "ris.station-board.{}.{}.{}",
+                "zugportal.station-board.{}.{}.{}",
                 eva,
                 time_start.naive_utc().format("%Y-%m-%dT%H:%M"),
                 time_end.naive_utc().format("%Y-%m-%dT%H:%M")
@@ -62,7 +62,7 @@ pub async fn ris_station_board(
         }
     }
 
-    let station_board = state.ris_client
+    let station_board = state.zugportal_client
         .station_board(&eva, time_start, time_end)
         .await?;
 

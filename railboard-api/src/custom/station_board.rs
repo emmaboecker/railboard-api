@@ -144,10 +144,10 @@ pub async fn station_board(
                     destination_name: item.destination_name,
 
                     administation: Some(StationBoardItemAdministration {
-                        id: item.administation.id,
-                        operator_code: item.administation.operator_code,
-                        operator_name: item.administation.operator_name,
-                        ris_operator_name: item.administation.ris_operator_name,
+                        id: item.administration.id,
+                        operator_code: item.administration.operator_code,
+                        operator_name: item.administration.operator_name,
+                        ris_operator_name: item.administration.ris_operator_name,
                     }),
 
                     additional_info: iris_item.map(|iris| IrisInformation {

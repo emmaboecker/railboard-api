@@ -13,6 +13,7 @@ use utoipa_swagger_ui::SwaggerUi;
 use iris_client::IrisClient;
 use ris_client::RisClient;
 use vendo_client::VendoClient;
+use zugportal_client::ZugportalClient;
 
 use crate::cache::RedisCache;
 
@@ -23,6 +24,8 @@ pub mod iris;
 pub mod ris;
 pub mod vendo;
 pub mod custom;
+
+pub mod zugportal;
 
 #[derive(OpenApi)]
 #[openapi(
@@ -70,7 +73,6 @@ iris_client::station_board::message::MessagePriority,
 // Ris stuff
 ris_client::RisError,
 ris_client::RisUnauthorizedError,
-ris_client::ZugportalError,
 ris_client::journey_search::RisJourneySearchElement,
 ris_client::journey_search::RisJourneySearchSchedule,
 ris_client::journey_search::RisJourneySearchTransport,
@@ -93,6 +95,12 @@ ris_client::station_search::RisStationSearchResponse,
 ris_client::station_search::RisStationSearchElement,
 ris_client::station_search::RisStationSearchTranslatable,
 ris_client::station_search::RisStationSearchNameContent,
+// Zugportal
+zugportal_client::ZugportalError,
+zugportal_client::station_board::ZugportalStationBoard,
+zugportal_client::station_board::ZugportalStationBoardItem,
+zugportal_client::station_board::ZugportalStationBoardItemAdministration,
+zugportal_client::station_board::ZugportalDepartureArrival,
 // Custom stuff
 custom::station_board::StationBoard,
 custom::station_board::StationBoardItem,
@@ -105,6 +113,7 @@ tags(
 (name = "Ris", description = "API using the Ris API as Backend"),
 (name = "Custom", description = "API not using a single API as Backend, but rather a combination of multiple sources"),
 (name = "Vendo", description = "API using the Vendo API as Backend"),
+(name = "Zugportal", description = "API using the Zugportal API as Backend (Deprecated, Ris but in worse)"),
 )
 )]
 struct ApiDoc;
@@ -137,8 +146,8 @@ async fn main() {
 
     let http_client =
         Client::builder()
-            // .add_root_certificate(Certificate::from_pem(include_bytes!("../../mitm.pem")).unwrap())
-            // .proxy(Proxy::all("http://localhost:8080").unwrap())
+            .add_root_certificate(Certificate::from_pem(include_bytes!("../../mitm.pem")).unwrap())
+            .proxy(Proxy::all("http://localhost:8080").unwrap())
             .build()
             .unwrap();
 
@@ -154,15 +163,19 @@ async fn main() {
 
     let vendo_client = Arc::new(VendoClient::new(Some(http_client.clone()), None, None));
 
+    let zugportal_client = Arc::new(ZugportalClient::new(Some(http_client.clone()), None, None));
+
     let app = Router::new()
         .merge(SwaggerUi::new("/docs").url("/openapi.json", ApiDoc::openapi()))
         .nest("/vendo/v1", vendo::router())
         .nest("/iris/v1", iris::router())
-        .nest("/ris/v1", ris::router())
-        .nest("/v1", custom::router()).with_state(Arc::new(SharedState {
+        .nest("/ris/", ris::router())
+        .nest("/ris/", zugportal::router())
+        .nest("", custom::router()).with_state(Arc::new(SharedState {
         vendo_client,
         ris_client,
         iris_client,
+        zugportal_client,
         cache: RedisCache::new(redis_client),
     }))
         .fallback(|| async { "Nothing here :/" });
@@ -178,6 +191,7 @@ pub struct SharedState {
     vendo_client: Arc<VendoClient>,
     ris_client: Arc<RisClient>,
     iris_client: Arc<IrisClient>,
+    zugportal_client: Arc<ZugportalClient>,
     cache: RedisCache,
 }
 

@@ -36,6 +36,9 @@ version = '0.11.18'
 [dependencies.ris-client]
 path = '../ris-client'
 
+[dependencies.zugportal-client]
+path = '../zugportal-client'
+
 [dependencies.serde]
 features = ['derive']
 version = '1.0.180'

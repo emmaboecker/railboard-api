@@ -1008,6 +1008,7 @@ dependencies = [
  "utoipa",
  "utoipa-swagger-ui",
  "vendo-client",
+ "zugportal-client",
 ]
 
 [[package]]
@@ -2103,4 +2104,22 @@ dependencies = [
  "crc32fast",
  "crossbeam-utils",
  "flate2",
+]
+
+[[package]]
+name = "zugportal-client"
+version = "0.1.0"
+dependencies = [
+ "async-lock",
+ "chrono",
+ "chrono-tz",
+ "dotenvy",
+ "iris-client",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
+ "urlencoding",
+ "utoipa",
 ]

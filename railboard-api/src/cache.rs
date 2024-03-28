@@ -14,6 +14,7 @@ use ris_client::station_board::RisStationBoard;
 use ris_client::station_information::RisStationInformation;
 use vendo_client::journey_details::VendoJourneyDetails;
 use vendo_client::station_board::VendoStationBoard;
+use zugportal_client::station_board::ZugportalStationBoard;
 use crate::vendo::location_search::LocationSearchCache;
 
 #[async_trait::async_trait]
@@ -239,6 +240,24 @@ impl CachableObject for RisStationBoard {
     ) -> Result<(), CacheInsertError> {
         let key = format!(
             "ris.station-board.{}.{}.{}",
+            self.eva,
+            self.time_start.naive_utc().format("%Y-%m-%dT%H:%M"),
+            self.time_end.naive_utc().format("%Y-%m-%dT%H:%M")
+        );
+
+        cache.insert_to_cache(key, &self, 180).await
+    }
+}
+
+#[async_trait::async_trait]
+impl CachableObject for ZugportalStationBoard {
+    async fn insert_to_cache<C: Cache>(
+        &self,
+        cache: &C,
+        _information: Option<&str>,
+    ) -> Result<(), CacheInsertError> {
+        let key = format!(
+            "zugportal.station-board.{}.{}.{}",
             self.eva,
             self.time_start.naive_utc().format("%Y-%m-%dT%H:%M"),
             self.time_end.naive_utc().format("%Y-%m-%dT%H:%M")
