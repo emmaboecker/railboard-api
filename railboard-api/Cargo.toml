@@ -42,7 +42,7 @@ version = '1.0.180'
 
 [dependencies.tokio]
 features = ['full']
-version = '1.29.1'
+version = '1.37.0'
 
 [dependencies.tracing-subscriber]
 features = ['env-filter']
