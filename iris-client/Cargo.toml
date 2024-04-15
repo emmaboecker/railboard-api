@@ -9,7 +9,7 @@ wu-diff = '0.1.2'
 
 [dependencies.chrono]
 features = ['serde']
-version = '0.4.26'
+version = '0.4.38'
 
 [dependencies.reqwest]
 default-features = false

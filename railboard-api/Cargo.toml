@@ -12,7 +12,7 @@ tracing = '0.1.37'
 
 [dependencies.chrono]
 features = ['serde']
-version = '0.4.26'
+version = '0.4.38'
 
 [dependencies.iris-client]
 path = '../iris-client'
