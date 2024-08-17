@@ -2,8 +2,8 @@ use chrono::NaiveDate;
 
 pub use response::*;
 
-use crate::{RisClient, RisOrRequestError};
 use crate::request::ResponseOrRisError;
+use crate::{RisClient, RisOrRequestError};
 
 mod response;
 
@@ -18,9 +18,11 @@ impl RisClient {
 
         let url = format!("{}/db/apis/ris-journeys/v1/byrelation", self.base_url);
 
+        let number = urlencoding::encode(number);
+
         let mut query = vec![
             ("category", category.to_owned()),
-            ("number", number.to_owned()),
+            ("number", number.into_owned()),
         ];
 
         if let Some(date) = date {
@@ -41,9 +43,7 @@ impl RisClient {
 
         match response {
             ResponseOrRisError::Response(response) => Ok(*response),
-            ResponseOrRisError::Error(error) => {
-                Err(RisOrRequestError::RisError(error))
-            }
+            ResponseOrRisError::Error(error) => Err(RisOrRequestError::RisError(error)),
             ResponseOrRisError::UnauthorizedError(error) => {
                 Err(RisOrRequestError::RisUnauthorizedError(error))
             }

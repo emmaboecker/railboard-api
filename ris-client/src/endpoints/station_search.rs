@@ -1,7 +1,7 @@
 pub use response::*;
 
-use crate::{RisClient, RisOrRequestError};
 use crate::request::ResponseOrRisError;
+use crate::{RisClient, RisOrRequestError};
 
 mod response;
 
@@ -14,6 +14,8 @@ impl RisClient {
         let _permit = self.semaphore.acquire().await;
 
         let limit = limit.unwrap_or(25);
+
+        let query = urlencoding::encode(query);
 
         let url = format!(
             "{}/db/apis/ris-stations/v1/stop-places/by-name/{query}",
@@ -33,13 +35,10 @@ impl RisClient {
 
         match response {
             ResponseOrRisError::Response(response) => Ok(response.stop_places),
-            ResponseOrRisError::Error(error) => {
-                Err(RisOrRequestError::RisError(error))
-            }
+            ResponseOrRisError::Error(error) => Err(RisOrRequestError::RisError(error)),
             ResponseOrRisError::UnauthorizedError(error) => {
                 Err(RisOrRequestError::RisUnauthorizedError(error))
             }
         }
     }
 }
-
