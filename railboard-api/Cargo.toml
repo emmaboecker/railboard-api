@@ -1,7 +1,7 @@
 [dependencies]
 async-lock = '2.7.0'
 async-trait = '0.1.72'
-axum = '0.6.19'
+axum = '0.8.0'
 chrono-tz = '0.8.3'
 dotenvy = '0.15.7'
 erased-serde = '0.3.28'
