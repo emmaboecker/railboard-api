@@ -88,6 +88,4 @@ pub struct StationBoardRequestedStation {
     pub location_id: String,
     #[serde(rename = "evaNr")]
     pub eva: String,
-    #[serde(rename = "stationId")]
-    pub station_id: String,
 }
