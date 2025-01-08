@@ -1,17 +1,17 @@
-use reqwest::header::{ACCEPT, CONTENT_TYPE, HeaderValue};
+use reqwest::header::{HeaderValue, ACCEPT, CONTENT_TYPE};
 use serde::Deserialize;
 use urlencoding::encode;
 
 pub use transformed::*;
 
-use crate::{VendoClient, VendoError, VendoOrRequestError};
 use crate::journey_details::response::JourneyDetailsResponse;
 use crate::shared::Time;
+use crate::{VendoClient, VendoError, VendoOrRequestError};
 
 pub mod response;
 mod transformed;
 
-const VENDO_JOURNEY_DETAILS_HEADER: &str = "application/x.db.vendo.mob.zuglauf.v1+json";
+const VENDO_JOURNEY_DETAILS_HEADER: &str = "application/x.db.vendo.mob.zuglauf.v2+json";
 
 impl VendoClient {
     /// Get journey details for a specific journey.
@@ -55,7 +55,12 @@ impl VendoClient {
                         .stops
                         .into_iter()
                         .map(|stop| VendoStop {
-                            name: stop.name,
+                            name: stop.stop_details.name,
+                            eva: stop.stop_details.eva,
+                            position: PolylinePosition {
+                                longitude: stop.stop_details.position.longitude,
+                                latitude: stop.stop_details.position.latitude,
+                            },
                             arrival: stop.arrival.map(|arrival| Time {
                                 scheduled: arrival,
                                 realtime: stop.realtime_arrival,
@@ -99,6 +104,23 @@ impl VendoClient {
                         days_of_operation: response.schedule.days_of_operation,
                     },
                     journey_day: response.journey_day,
+
+                    polyline: response.polyline_group.map(|group| {
+                        group
+                            .polyline_desc
+                            .map(|desc| {
+                                desc.first()
+                                    .unwrap()
+                                    .coordinates
+                                    .iter()
+                                    .map(|point| PolylinePosition {
+                                        longitude: point.longitude,
+                                        latitude: point.latitude,
+                                    })
+                                    .collect()
+                            })
+                            .unwrap_or_default()
+                    }),
                 };
 
                 Ok(mapped)

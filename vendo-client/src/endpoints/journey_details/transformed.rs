@@ -25,6 +25,16 @@ pub struct VendoJourneyDetails {
 
     pub schedule: VendoTrainSchedule,
     pub journey_day: String,
+
+    #[schema(nullable)]
+    pub polyline: Option<Vec<PolylinePosition>>
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct PolylinePosition {
+    pub longitude: f64,
+    pub latitude: f64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
@@ -39,6 +49,8 @@ pub struct VendoTrainSchedule {
 #[serde(rename_all = "camelCase")]
 pub struct VendoStop {
     pub name: String,
+    pub eva: String,
+    pub position: PolylinePosition,
     #[schema(nullable)]
     pub arrival: Option<Time>,
     #[schema(nullable)]

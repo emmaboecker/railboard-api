@@ -167,7 +167,7 @@ async fn main() {
     }))
         .fallback(|| async { "Nothing here :/" });
 
-    let bind_addr = std::env::var("API_URL").unwrap_or_else(|_| String::from("0.0.0.0:8080"));
+    let bind_addr = std::env::var("API_URL").unwrap_or_else(|_| String::from("0.0.0.0:8069"));
 
     let server = Server::bind(&bind_addr.parse().unwrap()).serve(app.into_make_service()).with_graceful_shutdown(shutdown_hook());
     tracing::info!("Listening on {}", bind_addr);

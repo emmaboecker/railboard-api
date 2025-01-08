@@ -197,7 +197,6 @@ async fn get_realtime(
 
     match realtime {
         Ok(realtime) => {
-            let realtime = realtime;
             let cache_realtime = (realtime.clone(), id.to_owned());
             let cache = cache.clone();
             tokio::spawn(async move {

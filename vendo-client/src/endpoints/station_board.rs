@@ -57,7 +57,7 @@ impl VendoClient {
             .into_iter()
             .map(|(id, (arrival, departure))| {
                 let arrival_data = arrival.as_ref().map(|arrival| StationBoardArrival {
-                    origin: arrival.origin_name.clone(),
+                    origin: arrival.origin.name.clone(),
                     time: Time {
                         scheduled: arrival.arrival_date,
                         realtime: arrival.realtime_arrival_date,
@@ -189,7 +189,7 @@ trait StationBoardRequest {
     ) -> Result<Request, reqwest::Error>;
 }
 
-const VENDO_STATION_BOARD_HEADER: &str = "application/x.db.vendo.mob.bahnhofstafeln.v1+json";
+const VENDO_STATION_BOARD_HEADER: &str = "application/x.db.vendo.mob.bahnhofstafeln.v2+json";
 
 impl StationBoardRequest for RequestBuilder {
     fn station_board_request(

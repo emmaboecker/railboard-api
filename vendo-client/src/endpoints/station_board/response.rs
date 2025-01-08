@@ -17,11 +17,9 @@ pub struct StationBoardArrivalsElement {
     #[serde(rename = "mitteltext")]
     pub name: String,
     #[serde(rename = "abfrageOrt")]
-    pub station_name: String,
-    #[serde(rename = "abfrageOrtId")]
-    pub station_id: String,
+    pub requested_station: StationBoardRequestedStation,
     #[serde(rename = "abgangsOrt")]
-    pub origin_name: String,
+    pub origin: StationBoardArrivalsElementOrigin,
     #[serde(rename = "ankunftsDatum")]
     pub arrival_date: DateTime<FixedOffset>,
     #[serde(rename = "ezAnkunftsDatum")]
@@ -34,6 +32,13 @@ pub struct StationBoardArrivalsElement {
     pub notes: Vec<Note>,
     #[serde(rename = "produktGattung")]
     pub product_type: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StationBoardArrivalsElementOrigin {
+    pub name: String,
+    #[serde(rename = "locationId")]
+    pub location_id: String,
 }
 
 // Departures
@@ -53,11 +58,10 @@ pub struct StationBoardDeparturesElement {
     #[serde(rename = "mitteltext")]
     pub name: String,
     #[serde(rename = "abfrageOrt")]
-    pub station_name: String,
-    #[serde(rename = "abfrageOrtId")]
-    pub station_id: String,
+    pub requested_station: StationBoardRequestedStation,
     #[serde(rename = "richtung")]
     pub destination_name: String,
+
     #[serde(rename = "abgangsDatum")]
     pub departure_date: DateTime<FixedOffset>,
     #[serde(rename = "ezAbgangsDatum")]
@@ -75,4 +79,15 @@ pub struct StationBoardDeparturesElement {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Note {
     pub text: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct StationBoardRequestedStation {
+    pub name: String,
+    #[serde(rename = "locationId")]
+    pub location_id: String,
+    #[serde(rename = "evaNr")]
+    pub eva: String,
+    #[serde(rename = "stationId")]
+    pub station_id: String,
 }
