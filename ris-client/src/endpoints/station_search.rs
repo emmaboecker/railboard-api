@@ -6,6 +6,9 @@ use crate::{RisClient, RisOrRequestError};
 mod response;
 
 impl RisClient {
+    #[deprecated(
+        note = "the only known api key was revoked, so i cannot maintain this endpoint anymore"
+    )]
     pub async fn station_search_by_name(
         &self,
         query: &str,

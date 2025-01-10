@@ -8,6 +8,9 @@ pub(crate) mod response;
 mod transformed;
 
 impl RisClient {
+    #[deprecated(
+        note = "the only known api key was revoked, so i cannot maintain this endpoint anymore"
+    )]
     pub async fn station_information(
         &self,
         eva: &str,

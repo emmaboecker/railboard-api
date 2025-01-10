@@ -22,6 +22,7 @@ responses(
 (status = 500, description = "The Error returned if the request or deserialization fails, will be domain Request", body = RailboardApiError)
 )
 )]
+#[deprecated(note = "the endpoint is not being maintained anymore, see ris-client")]
 pub async fn station_information(
     Path(eva): Path<String>,
     State(state): State<Arc<SharedState>>,

@@ -30,6 +30,7 @@ pub struct RisStationSearchQuery {
         (status = 500, description = "The Error returned if the request or deserialization fails, will be domain Request", body = RailboardApiError)
     )
 )]
+#[deprecated(note = "the endpoint is not being maintained anymore, see ris-client")]
 pub async fn station_search_by_name(
     Path(query): Path<String>,
     Query(query_params): Query<RisStationSearchQuery>,
