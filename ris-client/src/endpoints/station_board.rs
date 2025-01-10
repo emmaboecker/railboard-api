@@ -14,6 +14,7 @@ mod response;
 mod transformed;
 
 // This endpoint uses the "zugportal" api that the "Zugportal" App uses, and its basically ris so I didnt feel like making another package for it
+// Update 01/2025: The only known ris api key has been invalidated, so it will stay with Zugportal
 
 impl RisClient {
     pub async fn station_board(
