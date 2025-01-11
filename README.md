@@ -38,5 +38,5 @@ If you have any feature request of an idea feel free to [open an issue](https://
 
 Contributions are always welcome, I'd prefer if you contact me before opening a PR for now tho
 
-_anyone that is willing to help with this project, feel free to hit me up on [Mastodon (@stck@chaos.social)](https://chaos.social/@stck)/[Twitter (@StckOverflw)](https://twitter.com/EmmaBoecker) 
-or add me on Discord StckOverflw#2665_
+_anyone that is willing to help with this project, feel free to hit me up on [Mastodon (@boecker@chaos.social)](https://chaos.social/@boecker)/[Twitter (@emmavdev)](https://x.com/emmavdev)/[Twitter (@EmmaBoecker)](https://x.com/EmmaBoecker)
+or send me an email at [emma@boecker.dev](mailto:emma@boecker.dev)
