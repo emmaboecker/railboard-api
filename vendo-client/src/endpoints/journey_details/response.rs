@@ -32,7 +32,7 @@ pub struct JourneyDetailsResponse {
     #[serde(rename = "reisetag")]
     pub journey_day: String,
     #[serde(rename = "polylineGroup")]
-    pub polyline_group: Option<JourneyDetailsPolylineGroup>
+    pub polyline_group: Option<JourneyDetailsPolylineGroup>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -44,13 +44,13 @@ pub struct JourneyDetailsPolylineGroup {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct JourneyDetailsPolylineDescription {
     pub coordinates: Vec<JourneyDetailsPolylinePoint>,
-    pub delta: bool
+    pub delta: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct JourneyDetailsPolylinePoint {
     pub longitude: f64,
-    pub latitude: f64
+    pub latitude: f64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -122,7 +122,6 @@ pub struct JourneyDetailsStopPosition {
     pub longitude: f64,
     pub latitude: f64,
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JourneyDetailsNotice {

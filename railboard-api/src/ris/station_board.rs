@@ -10,7 +10,11 @@ use serde::Deserialize;
 
 use ris_client::station_board::RisStationBoard;
 
-use crate::{cache::{CachableObject, Cache}, error::RailboardResult, SharedState};
+use crate::{
+    cache::{CachableObject, Cache},
+    error::RailboardResult,
+    SharedState,
+};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -48,7 +52,8 @@ pub async fn station_board(
         .map(|time_end| Berlin.from_utc_datetime(&time_end.naive_utc()));
 
     if let (Some(time_start), Some(time_end)) = (time_start, time_end) {
-        if let Some(cached) = state.cache
+        if let Some(cached) = state
+            .cache
             .get_from_id(&format!(
                 "ris.station-board.{}.{}.{}",
                 eva,
@@ -61,7 +66,8 @@ pub async fn station_board(
         }
     }
 
-    let station_board = state.ris_client
+    let station_board = state
+        .ris_client
         .station_board(&eva, time_start, time_end)
         .await?;
 
@@ -74,5 +80,3 @@ pub async fn station_board(
 
     Ok(Json(station_board))
 }
-
-

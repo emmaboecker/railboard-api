@@ -6,9 +6,9 @@ use serde::Deserialize;
 
 pub use transformed::*;
 
-use crate::{RisClient, RisOrRequestError, ZugportalError};
 use crate::helpers::name_from_administation_code;
 use crate::station_board::response::{StationBoardItem, StationBoardResponse};
+use crate::{RisClient, RisOrRequestError, ZugportalError};
 
 mod response;
 mod transformed;
@@ -45,7 +45,7 @@ impl RisClient {
         }
 
         if departures.station_name.is_none() {
-            return Err(RisOrRequestError::NotFoundError)
+            return Err(RisOrRequestError::NotFoundError);
         }
 
         Ok(RisStationBoard {
@@ -127,7 +127,7 @@ impl RisClient {
                                 name_from_administation_code(
                                     &departure_arrival.administration.operator_name,
                                 )
-                                    .unwrap_or(&departure_arrival.administration.operator_name),
+                                .unwrap_or(&departure_arrival.administration.operator_name),
                             ),
                             ris_operator_name: departure_arrival.administration.operator_name,
                         },

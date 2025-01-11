@@ -40,7 +40,8 @@ async fn journey_details() {
             )
         });
 
-    let event = journey_details.stops
+    let event = journey_details
+        .stops
         .into_iter()
         .find(|train| train.stop_id == "8000105")
         .expect("Failed to get right station");

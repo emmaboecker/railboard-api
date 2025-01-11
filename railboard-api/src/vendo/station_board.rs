@@ -11,7 +11,11 @@ use utoipa::IntoParams;
 
 use vendo_client::station_board::VendoStationBoard;
 
-use crate::{cache::{CachableObject, Cache}, error::{ErrorDomain, RailboardApiError, RailboardResult}, SharedState};
+use crate::{
+    cache::{CachableObject, Cache},
+    error::{ErrorDomain, RailboardApiError, RailboardResult},
+    SharedState,
+};
 
 #[derive(Deserialize, IntoParams)]
 pub struct StationBoardQuery {
@@ -63,10 +67,7 @@ pub async fn station_board(
         return Ok(Json(cached));
     }
 
-    let station_board = state
-        .vendo_client
-        .station_board(&id, date)
-        .await?;
+    let station_board = state.vendo_client.station_board(&id, date).await?;
 
     {
         let station_board = station_board.clone();
@@ -75,4 +76,3 @@ pub async fn station_board(
 
     Ok(Json(station_board))
 }
-

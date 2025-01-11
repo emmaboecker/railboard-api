@@ -7,7 +7,11 @@ use axum::{
 
 use ris_client::journey_details::RisJourneyDetails;
 
-use crate::{cache::{CachableObject, Cache}, error::RailboardResult, SharedState};
+use crate::{
+    cache::{CachableObject, Cache},
+    error::RailboardResult,
+    SharedState,
+};
 
 #[utoipa::path(
     get,
@@ -22,6 +26,7 @@ use crate::{cache::{CachableObject, Cache}, error::RailboardResult, SharedState}
 (status = 500, description = "The Error returned if the request or deserialization fails, will be domain Request", body = RailboardApiError)
     ),
 )]
+#[allow(deprecated)]
 #[deprecated(note = "the endpoint is not being maintained anymore, see ris-client")]
 pub async fn journey_details(
     Path(id): Path<String>,
@@ -44,4 +49,3 @@ pub async fn journey_details(
 
     Ok(Json(response))
 }
-

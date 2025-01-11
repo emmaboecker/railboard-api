@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use chrono::{DateTime, TimeZone};
 use chrono_tz::{Europe::Berlin, Tz};
 use reqwest::{
@@ -6,6 +5,7 @@ use reqwest::{
     Request, RequestBuilder,
 };
 use serde::Deserialize;
+use std::collections::BTreeMap;
 
 use crate::VendoClient;
 use crate::{error::VendoError, VendoOrRequestError};
@@ -14,10 +14,13 @@ mod request;
 pub mod response;
 mod transformed;
 
+use crate::shared::Time;
+use crate::station_board::response::{
+    StationBoardArrivalsElement, StationBoardArrivalsResponse, StationBoardDeparturesElement,
+    StationBoardDeparturesResponse,
+};
 pub use request::*;
 pub use transformed::*;
-use crate::shared::Time;
-use crate::station_board::response::{StationBoardArrivalsElement, StationBoardArrivalsResponse, StationBoardDeparturesElement, StationBoardDeparturesResponse};
 
 impl VendoClient {
     pub async fn station_board(
@@ -26,11 +29,9 @@ impl VendoClient {
         date: DateTime<Tz>,
     ) -> Result<VendoStationBoard, VendoOrRequestError> {
         let (arrivals, departures) = tokio::join!(
-        self
-            .station_board_arrivals(id, Some(date), None),
-        self
-            .station_board_departures(id, Some(date), None)
-    );
+            self.station_board_arrivals(id, Some(date), None),
+            self.station_board_departures(id, Some(date), None)
+        );
 
         let arrivals = arrivals?;
         let departures = departures?;
@@ -82,6 +83,11 @@ impl VendoClient {
                         scheduled_platform: departure.platform,
                         realtime_platform: departure.realtime_platform,
                         notes: departure.notes.into_iter().map(|note| note.text).collect(),
+                        request_station: StationBoardRequestedStation {
+                            eva: departure.requested_station.eva,
+                            name: departure.requested_station.name,
+                            location_id: departure.requested_station.location_id,
+                        },
                     }
                 } else if let Some(arrival) = arrival {
                     StationBoardElement {
@@ -95,6 +101,11 @@ impl VendoClient {
                         scheduled_platform: arrival.platform,
                         realtime_platform: arrival.realtime_platform,
                         notes: arrival.notes.into_iter().map(|note| note.text).collect(),
+                        request_station: StationBoardRequestedStation {
+                            eva: arrival.requested_station.eva,
+                            name: arrival.requested_station.name,
+                            location_id: arrival.requested_station.location_id,
+                        },
                     }
                 } else {
                     panic!("Arrival and departure are both None"); // This should never happen (it is just simply not possible)

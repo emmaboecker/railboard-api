@@ -7,7 +7,11 @@ use axum::{
 
 use ris_client::station_information::RisStationInformation;
 
-use crate::{cache::{CachableObject, Cache}, error::{RailboardApiError, RailboardResult}, SharedState};
+use crate::{
+    cache::{CachableObject, Cache},
+    error::{RailboardApiError, RailboardResult},
+    SharedState,
+};
 
 #[utoipa::path(
 get,
@@ -22,6 +26,7 @@ responses(
 (status = 500, description = "The Error returned if the request or deserialization fails, will be domain Request", body = RailboardApiError)
 )
 )]
+#[allow(deprecated)]
 #[deprecated(note = "the endpoint is not being maintained anymore, see ris-client")]
 pub async fn station_information(
     Path(eva): Path<String>,
@@ -56,4 +61,3 @@ pub async fn station_information(
 
     Ok(Json(response))
 }
-

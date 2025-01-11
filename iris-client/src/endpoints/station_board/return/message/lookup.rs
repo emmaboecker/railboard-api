@@ -1,4 +1,4 @@
-/**
+/*!
  * This file was made possible by https://github.com/marudor/bahn.expert/blob/main/src/server/iris/messageLookup.ts
  */
 

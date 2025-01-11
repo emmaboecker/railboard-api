@@ -1,7 +1,6 @@
+use crate::station_information::RisPosition;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use crate::station_information::RisPosition;
-
 
 #[derive(Deserialize, Debug, Serialize, PartialEq, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
@@ -27,7 +26,6 @@ pub struct RisStationSearchElement {
 pub struct RisStationSearchTranslatable {
     pub de: RisStationSearchNameContent,
 }
-
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]

@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
 use crate::journey_details::response::{JourneyDetailsAttribute, JourneyDetailsHimNotice};
 use crate::shared::{Attribute, HimNotice, Time};
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
@@ -27,7 +27,7 @@ pub struct VendoJourneyDetails {
     pub journey_day: String,
 
     #[schema(nullable)]
-    pub polyline: Option<Vec<PolylinePosition>>
+    pub polyline: Option<Vec<PolylinePosition>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]

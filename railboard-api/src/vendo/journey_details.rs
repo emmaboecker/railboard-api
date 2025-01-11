@@ -7,7 +7,11 @@ use axum::{
 
 use vendo_client::journey_details::VendoJourneyDetails;
 
-use crate::{cache::{CachableObject, Cache}, error::RailboardResult, SharedState};
+use crate::{
+    cache::{CachableObject, Cache},
+    error::RailboardResult,
+    SharedState,
+};
 
 #[utoipa::path(
 get,
@@ -41,4 +45,3 @@ pub async fn journey_details(
 
     Ok(Json(journey_details))
 }
-

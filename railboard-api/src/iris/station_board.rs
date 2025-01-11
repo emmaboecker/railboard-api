@@ -4,17 +4,21 @@ use axum::{
     extract::{Path, Query, State},
     Json,
 };
-use chrono::{DateTime, Duration, FixedOffset, Timelike, TimeZone};
+use chrono::{DateTime, Duration, FixedOffset, TimeZone, Timelike};
 use chrono_tz::{Europe::Berlin, Tz};
 use serde::Deserialize;
 use utoipa::IntoParams;
 
 use iris_client::{
-    IrisClient,
-    IrisOrRequestError, station_board::{from_iris_timetable, IrisStationBoard, response::TimeTable},
+    station_board::{from_iris_timetable, response::TimeTable, IrisStationBoard},
+    IrisClient, IrisOrRequestError,
 };
 
-use crate::{cache::{self, CachableObject, Cache}, error::RailboardResult, SharedState};
+use crate::{
+    cache::{self, CachableObject, Cache},
+    error::RailboardResult,
+    SharedState,
+};
 
 #[derive(Deserialize, IntoParams)]
 pub struct IrisStationBoardQuery {
@@ -64,7 +68,7 @@ pub async fn station_board(
         state.iris_client.clone(),
         &state.cache,
     )
-        .await?;
+    .await?;
 
     Ok(Json(station_board))
 }
@@ -113,9 +117,9 @@ pub async fn iris_station_board(
                         date.format("%H").to_string(),
                     );
                     let cache = cache.clone();
-                    tokio::spawn(async move {
-                        cache_timetable.insert_to_cache(&cache, None).await
-                    });
+                    tokio::spawn(
+                        async move { cache_timetable.insert_to_cache(&cache, None).await },
+                    );
                     Ok(timetable)
                 }
                 Err(err) => Err(err),
@@ -185,10 +189,7 @@ async fn get_realtime(
     id: &str,
 ) -> Result<TimeTable, IrisOrRequestError> {
     if let Some(cached) = &cache
-        .get_from_id::<TimeTable>(&format!(
-            "iris.station-board.realtime.{}",
-            id.to_owned()
-        ))
+        .get_from_id::<TimeTable>(&format!("iris.station-board.realtime.{}", id.to_owned()))
         .await
     {
         return Ok(cached.to_owned());
@@ -199,11 +200,7 @@ async fn get_realtime(
         Ok(realtime) => {
             let cache_realtime = (realtime.clone(), id.to_owned());
             let cache = cache.clone();
-            tokio::spawn(async move {
-                cache_realtime
-                    .insert_to_cache(&cache, None)
-                    .await
-            });
+            tokio::spawn(async move { cache_realtime.insert_to_cache(&cache, None).await });
             Ok(realtime)
         }
         Err(err) => Err(err),

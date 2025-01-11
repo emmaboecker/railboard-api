@@ -4,8 +4,8 @@ use serde::Deserialize;
 
 pub use transformed::*;
 
-use crate::{RisClient, RisError, RisOrRequestError, RisUnauthorizedError};
 use crate::journey_details::response::{EventType, JourneyDetailsEvent, JourneyDetailsResponse};
+use crate::{RisClient, RisError, RisOrRequestError, RisUnauthorizedError};
 
 mod response;
 mod transformed;
@@ -14,10 +14,7 @@ impl RisClient {
     #[deprecated(
         note = "the only known api key was revoked, so i cannot maintain this endpoint anymore"
     )]
-    pub async fn journey_details(
-        &self,
-        id: &str,
-    ) -> Result<RisJourneyDetails, RisOrRequestError> {
+    pub async fn journey_details(&self, id: &str) -> Result<RisJourneyDetails, RisOrRequestError> {
         let _permit = self.semaphore.acquire().await;
 
         let url = format!(
@@ -180,6 +177,7 @@ impl RisClient {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Deserialize, Debug)]
 #[serde(untagged)]
 enum RisJourneyDetailsOrErrorResponse {

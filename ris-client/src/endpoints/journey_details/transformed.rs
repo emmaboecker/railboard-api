@@ -1,7 +1,7 @@
+use crate::journey_details::response::{JourneyDetailsMessage, ReplacementTransport, Transport};
 use chrono::{DateTime, FixedOffset};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use crate::journey_details::response::{JourneyDetailsMessage, ReplacementTransport, Transport};
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -116,7 +116,9 @@ impl From<Transport> for RisTransport {
             number: transport.number,
             line: transport.line,
             label: transport.label,
-            replacement_transport: transport.replacement_transport.map(RisReplacementTransport::from),
+            replacement_transport: transport
+                .replacement_transport
+                .map(RisReplacementTransport::from),
         }
     }
 }

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use axum::{Router, routing::get};
+use axum::{routing::get, Router};
 
 use crate::SharedState;
 
@@ -10,6 +10,7 @@ pub mod station_board;
 pub mod station_information;
 pub mod station_search_by_name;
 
+#[allow(deprecated)]
 pub fn router() -> Router<Arc<SharedState>> {
     Router::new()
         .route(

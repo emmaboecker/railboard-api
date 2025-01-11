@@ -1,8 +1,8 @@
 pub use transformed::*;
 
-use crate::{RisClient, RisOrRequestError};
 use crate::request::ResponseOrRisError;
 use crate::station_information::response::StationInformationResponse;
+use crate::{RisClient, RisOrRequestError};
 
 pub(crate) mod response;
 mod transformed;
@@ -37,10 +37,8 @@ impl RisClient {
                 let station = response.stations.into_iter().next().map(|i| i.into());
 
                 Ok(station)
-            },
-            ResponseOrRisError::Error(error) => {
-                Err(RisOrRequestError::RisError(error))
             }
+            ResponseOrRisError::Error(error) => Err(RisOrRequestError::RisError(error)),
             ResponseOrRisError::UnauthorizedError(error) => {
                 Err(RisOrRequestError::RisUnauthorizedError(error))
             }

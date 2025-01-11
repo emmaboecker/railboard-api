@@ -10,7 +10,11 @@ use serde::Deserialize;
 
 use ris_client::journey_search::RisJourneySearchElement;
 
-use crate::{cache::{CachableObject, Cache}, error::RailboardResult, SharedState};
+use crate::{
+    cache::{CachableObject, Cache},
+    error::RailboardResult,
+    SharedState,
+};
 
 #[derive(Deserialize)]
 pub struct JounreySearchPath {
@@ -38,6 +42,7 @@ pub struct JounreySearchQuery {
         (status = 500, description = "The Error returned if the request or deserialization fails, will be domain Request", body = RailboardApiError)
     )
 )]
+#[allow(deprecated)]
 #[deprecated(note = "the endpoint is not being maintained anymore, see ris-client")]
 pub async fn journey_search(
     Path(path): Path<JounreySearchPath>,

@@ -8,7 +8,11 @@ use serde::{Deserialize, Serialize};
 
 use vendo_client::location_search::VendoLocationSearchResult;
 
-use crate::{cache::{CachableObject, Cache}, error::RailboardResult, SharedState};
+use crate::{
+    cache::{CachableObject, Cache},
+    error::RailboardResult,
+    SharedState,
+};
 
 #[utoipa::path(
     get,

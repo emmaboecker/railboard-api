@@ -133,7 +133,7 @@ impl From<RisOrRequestError> for RailboardApiError {
                 domain: ErrorDomain::Input,
                 message: "There was nothing found with these parameters".to_string(),
                 error: None,
-            }
+            },
         }
     }
 }

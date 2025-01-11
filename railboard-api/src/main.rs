@@ -2,11 +2,11 @@ use std::sync::Arc;
 
 use axum::{Router, Server};
 use dotenvy::dotenv;
-use reqwest::{Certificate, Client, Proxy};
+use reqwest::Client;
 #[cfg(unix)]
 use tokio::signal::unix::SignalKind;
 use tracing::metadata::LevelFilter;
-use tracing_subscriber::{EnvFilter, fmt, prelude::*};
+use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -19,10 +19,10 @@ use crate::cache::RedisCache;
 pub mod cache;
 pub mod error;
 
+pub mod custom;
 pub mod iris;
 pub mod ris;
 pub mod vendo;
-pub mod custom;
 
 #[derive(OpenApi)]
 #[openapi(
@@ -37,6 +37,7 @@ ris::station_board::station_board,
 ris::station_information::station_information,
 ris::station_search_by_name::station_search_by_name,
 custom::station_board::station_board,
+custom::station_board_v2::station_board_v2,
 ),
 components(schemas(
 error::RailboardApiError,
@@ -99,6 +100,12 @@ custom::station_board::StationBoardItem,
 custom::station_board::StationBoardItemAdministration,
 custom::station_board::DepartureArrival,
 custom::station_board::IrisInformation,
+// custom v2
+// Custom stuff
+custom::station_board_v2::StationBoard,
+custom::station_board_v2::StationBoardItem,
+custom::station_board_v2::DepartureArrival,
+custom::station_board_v2::IrisInformation,
 )),
 tags(
 (name = "Iris", description = "API using the Iris API as Backend"),
@@ -124,7 +131,9 @@ async fn main() {
 
     let redis_client = {
         let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| {
-            tracing::warn!("REDIS_URL env variable is not set. Using default \"redis://127.0.0.1/\"");
+            tracing::warn!(
+                "REDIS_URL env variable is not set. Using default \"redis://127.0.0.1/\""
+            );
             String::from("redis://127.0.0.1/")
         });
         redis::Client::open(redis_url).expect("Failed create redis client, check redis url")
@@ -133,14 +142,14 @@ async fn main() {
     let redis_client = Arc::new(redis_client);
 
     let ris_api_key = std::env::var("RIS_API_KEY").expect("RIS_API_KEY env variable is not set");
-    let ris_client_id = std::env::var("RIS_CLIENT_ID").expect("RIS_CLIENT_ID env variable is not set");
+    let ris_client_id =
+        std::env::var("RIS_CLIENT_ID").expect("RIS_CLIENT_ID env variable is not set");
 
-    let http_client =
-        Client::builder()
-            // .add_root_certificate(Certificate::from_pem(include_bytes!("../../mitm.pem")).unwrap())
-            // .proxy(Proxy::all("http://localhost:8080").unwrap())
-            .build()
-            .unwrap();
+    let http_client = Client::builder()
+        // .add_root_certificate(Certificate::from_pem(include_bytes!("../../mitm.pem")).unwrap())
+        // .proxy(Proxy::all("http://localhost:8080").unwrap())
+        .build()
+        .unwrap();
 
     let ris_client = Arc::new(RisClient::new(
         Some(http_client.clone()),
@@ -159,17 +168,21 @@ async fn main() {
         .nest("/vendo/v1", vendo::router())
         .nest("/iris/v1", iris::router())
         .nest("/ris/v1", ris::router())
-        .nest("/v1", custom::router()).with_state(Arc::new(SharedState {
-        vendo_client,
-        ris_client,
-        iris_client,
-        cache: RedisCache::new(redis_client),
-    }))
+        .nest("/v1", custom::router_v1())
+        .nest("/v2", custom::router_v2())
+        .with_state(Arc::new(SharedState {
+            vendo_client,
+            ris_client,
+            iris_client,
+            cache: RedisCache::new(redis_client),
+        }))
         .fallback(|| async { "Nothing here :/" });
 
     let bind_addr = std::env::var("API_URL").unwrap_or_else(|_| String::from("0.0.0.0:8069"));
 
-    let server = Server::bind(&bind_addr.parse().unwrap()).serve(app.into_make_service()).with_graceful_shutdown(shutdown_hook());
+    let server = Server::bind(&bind_addr.parse().unwrap())
+        .serve(app.into_make_service())
+        .with_graceful_shutdown(shutdown_hook());
     tracing::info!("Listening on {}", bind_addr);
     server.await.unwrap();
 }

@@ -74,7 +74,11 @@ async fn station_board_arrivals_filtered() {
         )
         .await;
 
-    assert!(response.is_ok(), "Return of station board is not ok: {}", response.unwrap_err());
+    assert!(
+        response.is_ok(),
+        "Return of station board is not ok: {}",
+        response.unwrap_err()
+    );
 
     let response = response.unwrap();
 

@@ -8,8 +8,11 @@ use serde::Deserialize;
 
 use ris_client::station_search::RisStationSearchElement;
 
-use crate::{cache::{CachableObject, Cache}, error::RailboardResult, SharedState};
-
+use crate::{
+    cache::{CachableObject, Cache},
+    error::RailboardResult,
+    SharedState,
+};
 
 #[derive(Deserialize)]
 pub struct RisStationSearchQuery {
@@ -30,6 +33,7 @@ pub struct RisStationSearchQuery {
         (status = 500, description = "The Error returned if the request or deserialization fails, will be domain Request", body = RailboardApiError)
     )
 )]
+#[allow(deprecated)]
 #[deprecated(note = "the endpoint is not being maintained anymore, see ris-client")]
 pub async fn station_search_by_name(
     Path(query): Path<String>,
@@ -58,10 +62,7 @@ pub async fn station_search_by_name(
 
         tokio::spawn(async move {
             response
-                .insert_to_cache(
-                    &state.cache, 
-                    Some(&format!("{}.{}", query, limit)),
-                )
+                .insert_to_cache(&state.cache, Some(&format!("{}.{}", query, limit)))
                 .await
         });
     }

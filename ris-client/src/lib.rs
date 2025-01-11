@@ -1,7 +1,7 @@
 use async_lock::Semaphore;
 
-mod helpers;
 mod error;
+mod helpers;
 pub use error::*;
 
 mod endpoints;

@@ -17,16 +17,14 @@ use crate::{error::RailboardResult, iris::station_board::iris_station_board, Sha
 #[serde(rename_all = "camelCase")]
 pub struct StationBoardQuery {
     pub time_start: Option<DateTime<FixedOffset>>,
-    pub time_end: Option<DateTime<FixedOffset>>,
 }
 
 #[utoipa::path(
 get,
-path = "/v1/station_board/{eva}",
+path = "/v2/station_board/{eva}",  
 params(
-("eva" = String, Path, description = "The Eva Number of the Station you are requesting"),
+("eva" = String, Path, description = "The Eva Number of the Station you are requesting, the main difference between v1 and v2 are the datasources, v1 uses the Ris and Iris, v2 uses the Vendo and Iris"),
 ("timeStart" = Option < DateTime < FixedOffset >>, Query, description = "The Start Time of the Time Range you are requesting"),
-("timeEnd" = Option < DateTime < FixedOffset >>, Query, description = "The End Time of the Time Range you are requesting")
 ),
 tag = "Custom",
 responses(
@@ -35,7 +33,7 @@ responses(
 (status = 500, description = "The Error returned if the request or deserialization fails, will be domain Request", body = RailboardApiError)
 )
 )]
-pub async fn station_board(
+pub async fn station_board_v2(
     Path(eva): Path<String>,
     Query(query): Query<StationBoardQuery>,
     State(state): State<Arc<SharedState>>,
@@ -46,16 +44,10 @@ pub async fn station_board(
         Berlin.from_utc_datetime(&Utc::now().naive_utc())
     };
 
-    let time_end = if let Some(time_end) = query.time_end {
-        Berlin.from_utc_datetime(&time_end.naive_utc())
-    } else {
-        Berlin.from_utc_datetime(&(Utc::now().naive_utc() + chrono::Duration::minutes(30)))
-    };
+    let time_end = Berlin.from_utc_datetime(&(time_start.naive_utc() + chrono::Duration::hours(1)));
 
-    let (ris_station_board, iris_station_board) = tokio::join!(
-        state
-            .ris_client
-            .station_board(&eva, Some(time_start), Some(time_end),),
+    let (vendo_station_board, iris_station_board) = tokio::join!(
+        state.vendo_client.station_board(&eva, time_start),
         iris_station_board(
             &eva,
             time_end,
@@ -65,7 +57,7 @@ pub async fn station_board(
         )
     );
 
-    let ris_station_board = ris_station_board?;
+    let vendo_station_board = vendo_station_board?;
     let iris_station_board = iris_station_board.unwrap_or(IrisStationBoard {
         station_name: String::new(),
         station_eva: String::new(),
@@ -73,7 +65,7 @@ pub async fn station_board(
         disruptions: vec![],
     });
 
-    let items = ris_station_board.items;
+    let items = vendo_station_board.station_board;
 
     let mut items: Vec<StationBoardItem> =
         items
@@ -81,8 +73,9 @@ pub async fn station_board(
             .map(|item| {
                 let iris_item =
                     iris_station_board.stops.iter().find(|iris_item| {
-                        iris_item.train_number == item.train_number.to_string()
-                            && iris_item.train_type == item.category
+                        item.name.replace(" ", "")
+                            == format!("{}{}", iris_item.train_type, iris_item.line_indicator)
+                                .replace(" ", "")
                             && (iris_item
                                 .arrival
                                 .clone()
@@ -90,63 +83,85 @@ pub async fn station_board(
                                 == item
                                     .arrival
                                     .clone()
-                                    .map(|arrival| arrival.time_scheduled.naive_utc().date().day())
+                                    .map(|arrival| arrival.time.scheduled.naive_utc().date().day())
                                 || iris_item.departure.clone().map(|departure| {
                                     departure.planned_time.naive_utc().date().day()
                                 }) == item.departure.clone().map(|departure| {
-                                    departure.time_scheduled.naive_utc().date().day()
+                                    departure.time.scheduled.naive_utc().date().day()
                                 }))
                     });
 
                 let iris_item = iris_item.cloned();
 
                 StationBoardItem {
-                    ris_id: Some(item.journey_id),
+                    vendo_id: Some(item.journey_id),
                     iris_id: iris_item.as_ref().map(|iris| iris.id.clone()),
 
-                    station_eva: item.station_eva,
-                    station_name: item.station_name,
+                    station_eva: item.request_station.eva.clone(),
+                    station_name: item.request_station.name.clone(),
 
-                    category: item.category,
-                    train_type: item.train_type,
-                    train_number: item.train_number,
-                    line_indicator: item.line_indicator,
+                    name: item.name.clone(),
+                    short_name: item.short_name.clone(),
+                    category: item.product_type,
+                    train_type: iris_item.clone().map(|iris| iris.train_type).unwrap_or(
+                        item.name
+                            .chars()
+                            .take_while(|c| c.is_ascii_alphabetic())
+                            .collect(),
+                    ),
+                    train_number: iris_item
+                        .clone()
+                        .map(|iris| iris.train_number.parse().unwrap_or(0)),
+                    line_indicator: iris_item.clone().map(|iris| iris.line_indicator).unwrap_or(
+                        item.name
+                            .split_whitespace()
+                            .last()
+                            .unwrap_or_default()
+                            .to_owned(),
+                    ),
 
-                    cancelled: item.cancelled,
+                    cancelled: item.notes.iter().any(|note| note == "Halt entfällt"),
 
-                    arrival: item.arrival.map(|arrival| DepartureArrival {
-                        time_scheduled: arrival.time_scheduled,
-                        time_realtime: arrival.time_realtime,
-                        time_type: Some(arrival.time_type),
+                    arrival: item.arrival.as_ref().map(|arrival| DepartureArrival {
+                        time_scheduled: arrival.time.scheduled,
+                        time_realtime: arrival.time.realtime,
                         wings: iris_item
                             .clone()
                             .and_then(|iris| iris.arrival.map(|arrival| arrival.wings))
                             .unwrap_or_default(),
                     }),
-                    departure: item.departure.map(|departure| DepartureArrival {
-                        time_scheduled: departure.time_scheduled,
-                        time_realtime: departure.time_realtime,
-                        time_type: Some(departure.time_type),
+                    departure: item.departure.as_ref().map(|departure| DepartureArrival {
+                        time_scheduled: departure.time.scheduled,
+                        time_realtime: departure.time.realtime,
                         wings: iris_item
                             .clone()
                             .and_then(|iris| iris.departure.map(|departure| departure.wings))
                             .unwrap_or_default(),
                     }),
 
-                    platform_scheduled: item.platform_scheduled,
-                    platform_realtime: item.platform_realtime,
+                    platform_scheduled: item.scheduled_platform,
+                    platform_realtime: item.realtime_platform,
 
-                    origin_eva: Some(item.origin_eva),
-                    origin_name: item.origin_name,
-                    destination_eva: Some(item.destination_eva),
-                    destination_name: item.destination_name,
-
-                    administation: Some(StationBoardItemAdministration {
-                        id: item.administation.id,
-                        operator_code: item.administation.operator_code,
-                        operator_name: item.administation.operator_name,
-                        ris_operator_name: item.administation.ris_operator_name,
-                    }),
+                    origin_eva: item
+                        .arrival
+                        .as_ref()
+                        .map(|_| None)
+                        .unwrap_or(Some(item.request_station.eva.clone())),
+                    origin_name: item
+                        .arrival
+                        .as_ref()
+                        .map(|arrival| arrival.origin.clone())
+                        .unwrap_or(item.request_station.name.clone()),
+                    destination_eva: item
+                        .departure
+                        .as_ref()
+                        .map(|_| None)
+                        .unwrap_or(Some(item.request_station.eva)),
+                    destination_name: item
+                        .departure
+                        .as_ref()
+                        .map(|departure| departure.destination.clone())
+                        .unwrap_or(item.request_station.name),
 
                     additional_info: iris_item.map(|iris| IrisInformation {
                         replaces: iris
@@ -181,25 +196,25 @@ pub async fn station_board(
             .any(|item| item.iris_id == Some(stop.id.clone()))
         {
             items.push(StationBoardItem {
-                ris_id: None,
+                vendo_id: None,
                 iris_id: Some(stop.id),
                 station_eva: stop.station_eva,
                 station_name: stop.station_name,
+                name: format!("{} {}", stop.train_type, stop.line_indicator),
+                short_name: stop.train_type.clone(),
                 category: stop.train_type.clone(),
                 train_type: stop.train_type,
-                train_number: stop.train_number.parse().unwrap_or(0),
+                train_number: stop.train_number.parse().map(Some).unwrap_or(None),
                 line_indicator: stop.line_indicator,
                 cancelled: stop.cancelled,
                 arrival: stop.arrival.map(|arrival| DepartureArrival {
                     time_scheduled: arrival.planned_time,
-                    time_realtime: arrival.real_time.unwrap_or(arrival.planned_time),
-                    time_type: None,
+                    time_realtime: arrival.real_time,
                     wings: arrival.wings,
                 }),
                 departure: stop.departure.map(|departure| DepartureArrival {
                     time_scheduled: departure.planned_time,
-                    time_realtime: departure.real_time.unwrap_or(departure.planned_time),
-                    time_type: None,
+                    time_realtime: departure.real_time,
                     wings: departure.wings,
                 }),
                 platform_scheduled: stop.planned_platform,
@@ -208,7 +223,6 @@ pub async fn station_board(
                 origin_name: stop.route.first().unwrap().name.clone(),
                 destination_eva: None,
                 destination_name: stop.route.last().unwrap().name.clone(),
-                administation: None,
                 additional_info: Some(IrisInformation {
                     replaces: stop
                         .replaces
@@ -234,10 +248,9 @@ pub async fn station_board(
     });
 
     let station_board = StationBoard {
-        eva: ris_station_board.eva,
-        name: ris_station_board.name,
-        time_start: ris_station_board.time_start,
-        time_end: ris_station_board.time_end,
+        eva,
+        time_start: time_start.fixed_offset(),
+        time_end: time_end.fixed_offset(),
         items,
     };
 
@@ -248,7 +261,6 @@ pub async fn station_board(
 #[serde(rename_all = "camelCase")]
 pub struct StationBoard {
     pub eva: String,
-    pub name: String,
     pub time_start: DateTime<FixedOffset>,
     pub time_end: DateTime<FixedOffset>,
     pub items: Vec<StationBoardItem>,
@@ -258,16 +270,19 @@ pub struct StationBoard {
 #[serde(rename_all = "camelCase")]
 pub struct StationBoardItem {
     #[schema(nullable)]
-    pub ris_id: Option<String>,
+    pub vendo_id: Option<String>,
     #[schema(nullable)]
     pub iris_id: Option<String>,
 
     pub station_eva: String,
     pub station_name: String,
 
+    pub name: String,
+    pub short_name: String,
     pub category: String,
     pub train_type: String,
-    pub train_number: u32,
+    #[schema(nullable)]
+    pub train_number: Option<u32>,
     pub line_indicator: String,
 
     pub cancelled: bool,
@@ -290,9 +305,6 @@ pub struct StationBoardItem {
     pub destination_name: String,
 
     #[schema(nullable)]
-    pub administation: Option<StationBoardItemAdministration>,
-
-    #[schema(nullable)]
     pub additional_info: Option<IrisInformation>,
 }
 
@@ -307,20 +319,9 @@ pub struct IrisInformation {
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, ToSchema, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct StationBoardItemAdministration {
-    pub id: String,
-    pub operator_code: String,
-    pub operator_name: String,
-    pub ris_operator_name: String,
-}
-
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, ToSchema, Clone)]
-#[serde(rename_all = "camelCase")]
 pub struct DepartureArrival {
     pub time_scheduled: DateTime<FixedOffset>,
-    pub time_realtime: DateTime<FixedOffset>,
-    #[schema(nullable)]
-    pub time_type: Option<String>,
+    pub time_realtime: Option<DateTime<FixedOffset>>,
 
     pub wings: Vec<String>,
 }
