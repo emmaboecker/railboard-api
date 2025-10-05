@@ -59,7 +59,7 @@ pub struct StationBoardDeparturesElement {
     pub name: String,
     #[serde(rename = "abfrageOrt")]
     pub requested_station: StationBoardRequestedStation,
-    #[serde(rename = "richtung")]
+    #[serde(rename = "richtung", default)]
     pub destination_name: String,
 
     #[serde(rename = "abgangsDatum")]
