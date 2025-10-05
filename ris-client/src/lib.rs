@@ -8,6 +8,7 @@ mod endpoints;
 mod request;
 
 pub use endpoints::*;
+use reqwest::{Certificate, Client, Proxy};
 
 pub struct RisClient {
     client: reqwest::Client,
@@ -32,5 +33,14 @@ impl RisClient {
             db_client_id: db_client_id.to_string(),
             db_api_key: db_api_key.to_string(),
         }
+    }
+
+    pub fn default_debug(proxy: &str, pem: &[u8], db_client_id: &str, db_api_key: &str) -> Self {
+        let http_client = Client::builder()
+            .add_root_certificate(Certificate::from_pem(pem).unwrap())
+            .proxy(Proxy::all(proxy).unwrap())
+            .build()
+            .unwrap();
+        Self::new(Some(http_client), None, None, db_client_id, db_api_key)
     }
 }
