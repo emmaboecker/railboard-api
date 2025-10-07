@@ -23,7 +23,7 @@ features = [
     'json',
     'connection-manager',
 ]
-version = '0.23.1'
+version = '0.32.0'
 
 [dependencies.reqwest]
 default-features = false
